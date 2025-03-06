@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-
+import Link from "next/link";
 export default function SignIn() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -108,7 +108,9 @@ export default function SignIn() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              <span className="bg-white px-2 text-gray-500">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -141,6 +143,17 @@ export default function SignIn() {
             </button>
           </div>
         </div>
+      </div>
+      <div className="mt-8 text-center">
+        <p className="text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link
+            href="/api/auth/register"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );

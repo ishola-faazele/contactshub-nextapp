@@ -43,7 +43,7 @@ export default function Register() {
       if (!response.ok) {
         setError(data.error || "Registration failed");
       } else {
-        router.push("/auth/signin?registered=true");
+        router.push("/api/auth/signin?registered=true");
       }
     } catch (error) {
       setError("Something went wrong. Please try again.");
@@ -149,7 +149,7 @@ export default function Register() {
         <div className="text-center mt-4">
           <p>
             Already have an account?{" "}
-            <Link href="/auth/signin" className="text-indigo-600 hover:text-indigo-500">
+            <Link href="/api/auth/signin" className="text-indigo-600 hover:text-indigo-500">
               Sign in
             </Link>
           </p>

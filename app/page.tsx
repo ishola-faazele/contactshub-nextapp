@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -18,7 +19,7 @@ export default function HomePage() {
     if (status === "unauthenticated") {
       router.push("/api/auth/signin");
     }
-    
+
     // If user is authenticated, fetch contacts
     if (status === "authenticated") {
       fetchContacts();
@@ -36,9 +37,10 @@ export default function HomePage() {
     setSearchTerm(e.target.value);
   };
 
-  const filteredContacts = contacts.filter((contact) =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Show loading state
@@ -63,12 +65,13 @@ export default function HomePage() {
             <span className="text-gray-600">
               Welcome, {session.user?.name || "User"}
             </span>
-            <Link
-              href="/api/auth/signout"
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+            <button
+              // href="/api/auth/signout"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 cursor-pointer"
             >
               Sign Out
-            </Link>
+            </button>
           </div>
         </header>
 
@@ -161,7 +164,8 @@ export default function HomePage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1">
-                          {contact.categories && contact.categories.length > 0 ? (
+                          {contact.categories &&
+                          contact.categories.length > 0 ? (
                             contact.categories.map((category, idx) => (
                               <span
                                 key={idx}
