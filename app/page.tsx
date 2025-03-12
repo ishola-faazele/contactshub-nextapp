@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import ContactCard from "@/components/ui/ContactCard"; // Make sure to adjust the import path
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -37,10 +38,26 @@ export default function HomePage() {
     setSearchTerm(e.target.value);
   };
 
+  const handleDeleteContact = async (id) => {
+    try {
+      const result = await apiRequest(`/api/contacts/${id}`, { method: "DELETE" });
+      // Update the contacts list locally without making another API call
+      if (result !== null) {
+        setContacts(contacts.filter(contact => contact.id !== id));
+      }
+    } catch (err) {
+      console.error("Error deleting contact:", err);
+    }
+  };
+  const handleEditContact = async (id) => {
+
+  }
+
   const filteredContacts = contacts.filter(
     (contact) =>
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchTerm.toLowerCase())
+      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.phone.toLowerCase().includes(searchTerm.toLocaleLowerCase())
   );
 
   // Show loading state
@@ -60,13 +77,12 @@ export default function HomePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Contact Manager</h1>
+          <h1 className="text-3xl font-bold">Contactshub</h1>
           <div className="flex items-center space-x-4">
             <span className="text-gray-600">
               Welcome, {session.user?.name || "User"}
             </span>
             <button
-              // href="/api/auth/signout"
               onClick={() => signOut({ callbackUrl: "/" })}
               className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 cursor-pointer"
             >
@@ -146,54 +162,12 @@ export default function HomePage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredContacts.map((contact) => (
-                    <tr key={contact.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {contact.name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {contact.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {contact.phone || "-"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1">
-                          {contact.categories &&
-                          contact.categories.length > 0 ? (
-                            contact.categories.map((category, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800"
-                              >
-                                {category}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
-                          href={`/contacts/${contact.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteContact(contact.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                    <ContactCard
+                      key={contact.id}
+                      contact={contact}
+                      onDelete={handleDeleteContact}
+                      // onEdit = {handleEditContact}
+                    />
                   ))}
                 </tbody>
               </table>

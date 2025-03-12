@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
 
 export default function ContactForm() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const { apiRequest, loading, error } = useApi();
@@ -31,6 +33,7 @@ export default function ContactForm() {
   }, [params]);
 
   const fetchContact = async (id) => {
+    console.log("Auth status: ", status)
     const data = await apiRequest(`/api/contacts/${id}`);
     if (data) {
       setFormData({

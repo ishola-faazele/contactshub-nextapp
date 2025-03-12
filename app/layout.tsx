@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Contact Manager",
+  title: "Contactshub",
   description: "Manage your contacts with ease",
 };
 
