@@ -5,15 +5,17 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
-import ContactCard from "@/components/ui/ContactCard"; // Make sure to adjust the import path
-
+// import { signOut } from "next-auth/react";// Make sure to adjust the import path
+import { ContactType } from "@/types/types";
+import Header from "./components/Header";
+import ContactList from "./components/ContactList";
 export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { apiRequest, loading, error } = useApi();
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] = useState<ContactType[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState("list");
 
   useEffect(() => {
     // If user is not authenticated and the auth check completed, redirect to signin
@@ -28,36 +30,34 @@ export default function HomePage() {
   }, [status, router]);
 
   const fetchContacts = async () => {
-    const data = await apiRequest("/api/contacts");
+    const data: ContactType[] | null = await apiRequest("/api/contacts");
     if (data) {
       setContacts(data);
     }
   };
-
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleDeleteContact = async (id) => {
+  const handleDeleteContact = async (id: string) => {
     try {
-      const result = await apiRequest(`/api/contacts/${id}`, { method: "DELETE" });
+      const result = await apiRequest(`/api/contacts/${id}`, {
+        method: "DELETE",
+      });
       // Update the contacts list locally without making another API call
       if (result !== null) {
-        setContacts(contacts.filter(contact => contact.id !== id));
+        setContacts(contacts.filter((contact) => contact.id !== id));
       }
     } catch (err) {
       console.error("Error deleting contact:", err);
     }
   };
-  const handleEditContact = async (id) => {
-
-  }
 
   const filteredContacts = contacts.filter(
     (contact) =>
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.phone.toLowerCase().includes(searchTerm.toLocaleLowerCase())
+      contact?.phone?.toLowerCase().includes(searchTerm.toLocaleLowerCase())
   );
 
   // Show loading state
@@ -76,20 +76,12 @@ export default function HomePage() {
   if (status === "authenticated") {
     return (
       <div className="container mx-auto px-4 py-8">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Contactshub</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600">
-              Welcome, {session.user?.name || "User"}
-            </span>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 cursor-pointer"
-            >
-              Sign Out
-            </button>
-          </div>
-        </header>
+        {/*Header */}
+        <Header
+          userName={session?.user?.name}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
@@ -140,37 +132,11 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Categories
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredContacts.map((contact) => (
-                    <ContactCard
-                      key={contact.id}
-                      contact={contact}
-                      onDelete={handleDeleteContact}
-                      // onEdit = {handleEditContact}
-                    />
-                  ))}
-                </tbody>
-              </table>
+              <ContactList
+                contacts={filteredContacts}
+                onDelete={handleDeleteContact}
+                viewMode={viewMode}
+              />
             </div>
           )}
         </div>
@@ -178,7 +144,5 @@ export default function HomePage() {
     );
   }
 
-  // This should not be reached due to the redirect in useEffect,
-  // but included for completeness
   return null;
 }
