@@ -212,7 +212,7 @@ export default function HomePage() {
     return (
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
-        <div className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 shadow-lg">
+        {/* <div className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 shadow-lg">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <Link href="/" className="flex items-center space-x-3">
               <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
@@ -283,7 +283,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Main content */}
         <div className="flex-1 flex flex-col">
