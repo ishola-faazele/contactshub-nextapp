@@ -19,11 +19,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          <SidebarProvider>
+          <SidebarProvider className="flex">
             <AppSidebar />
-            <main>
+            <main className="flex flex-1">
               <SidebarTrigger />
-              {children}
+              <div className="flex-1">
+                {children}
+              </div>
             </main>
           </SidebarProvider>
           </Providers>

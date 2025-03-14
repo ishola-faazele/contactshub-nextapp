@@ -3,6 +3,7 @@ import * as React from "react"
 import { GalleryVerticalEnd, LucideTrash, Contact, Download } from "lucide-react"
 import Link from "next/link";
 import { NavMain } from "@/components/nav-main"
+import { useSession } from "next-auth/react";
 // import { SidebarOptInForm } from "@/components/sidebar-opt-in-form"
 import {
   Sidebar,
@@ -37,7 +38,9 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const {data: session, status} = useSession();
   return (
+    session &&
     <Sidebar {...props}>
       <SidebarHeader>
         <SidebarMenu>
