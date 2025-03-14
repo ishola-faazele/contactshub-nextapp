@@ -1,17 +1,18 @@
 "use client";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-// import { Switch } from "@/components/ui/switch";
-import { LayoutGrid, List } from "lucide-react";
 import { signOut } from "next-auth/react";
 interface HeaderProps {
   // showForm: boolean;
   // setShowForm: (value: boolean) => void;
-  viewMode: string;
-  setViewMode: (value: string) => void;
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
   userName: string | null | undefined;
 }
-const Header: React.FC<HeaderProps> = ({ userName = "User", viewMode, setViewMode }) => {
+const Header: React.FC<HeaderProps> = ({
+  userName = "User",
+  searchTerm,
+  setSearchTerm,
+}) => {
   return (
     <header className="flex justify-between items-center bg-white dark:bg-gray-900 shadow-md p-4 rounded-xl">
       <motion.div
@@ -26,26 +27,16 @@ const Header: React.FC<HeaderProps> = ({ userName = "User", viewMode, setViewMod
       </motion.div>
 
       <div className="flex items-center gap-4 cursor-pointer">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-        >
-          {viewMode === "grid" ? (
-            <List className="w-5 h-5" />
-          ) : (
-            <LayoutGrid className="w-5 h-5" />
-          )}
-        </Button>
-
-        {/* <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancel" : "Add Contact"}
-        </Button> */}
+        <input
+          type="text"
+          placeholder="Search contacts..."
+          className="w-full px-4 py-2 border rounded-md"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
 
         <div className="flex items-center space-x-4">
-          <span className="text-gray-600">
-            Welcome, {userName || "User"}
-          </span>
+          <span className="text-gray-600">Welcome, {userName || "User"}</span>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 cursor-pointer"

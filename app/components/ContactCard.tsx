@@ -3,21 +3,29 @@
 // import Link from "next/link";
 import { ContactType } from "@/types/types";
 import {motion} from "framer-motion";
-import { Card,} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Mail, Phone, Trash2 } from "lucide-react";
+// import { Phone, Trash2 } from "lucide-react";
+
 // ContactCard component to display each contact and handle the modal
 interface ContactCardInterface {
   contact: ContactType,
   onDelete: (id: string) => void,
-  viewMode: string
 }
+
+
 
 const ContactCard: React.FC<ContactCardInterface> = ({
   contact,
   onDelete,
-  viewMode,
 }) => {
+  const truncateEmail = (email: string, maxLength = 15) => {
+    if (email.length > maxLength) {
+      return email.slice(0, 3) + "..." + email.slice(-10); // Keep first 10 and last 10 characters
+    }
+    return email;
+  };
   return (
     <motion.div
       key={contact.id}
@@ -27,47 +35,52 @@ const ContactCard: React.FC<ContactCardInterface> = ({
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="p-4 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow rounded-xl dark:bg-gray-800">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex items-center justify-center bg-blue-500 text-white text-lg font-semibold rounded-full">
-            {contact.name.charAt(0).toUpperCase()}
+      <Card className="flex flex-col p-4 w-64 shadow-md hover:shadow-lg transition-shadow rounded-2xl dark:bg-gray-800 cursor-pointer">
+        {/* Header: Avatar + More Options */}
+        <CardHeader className="flex flex-row items-center justify-between">
+          <Avatar className="w-14 h-14">
+            <AvatarImage src={contact.avatar} alt={contact.name} />
+            <AvatarFallback className="bg-red-500 text-white text-xl font-semibold">
+              {contact.name.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-row items-center gap-2 justify-between ">
+            <Trash2 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer" onClick={() => onDelete(contact.id)} />
+            {/* <MoreVertical className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer" /> */}
           </div>
+        </CardHeader>
+
+        {/* Contact Details */}
+        <CardContent className="mt-2 space-y-2">
           <div>
-            <p className="text-lg font-medium text-gray-900 dark:text-white">
-              {contact.name}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {contact.email}
-            </p>
-            {contact.phone && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {contact.phone}
-              </p>
-            )}
+            <p className="text-lg font-semibold text-gray-900 dark:text-white">{contact.name}</p>
+            {/* <p className="text-sm text-gray-500 dark:text-gray-400">{contact.role}</p> */}
           </div>
-        </div>
-        {contact.categories.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {contact.categories.map((category, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded-full"
-              >
-                {category}
-              </span>
-            ))}
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Mail size={16} className="text-gray-500 dark:text-gray-400" />
+            <span>{truncateEmail(contact.email)}</span>
           </div>
-        )}
-        <div className="flex justify-end gap-2 mt-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(contact.id)}
-          >
-            <Trash2 className="w-5 h-5 text-red-500" />
-          </Button>
-        </div>
-      </Card>
+          {contact.phone && (
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <Phone size={16} className="text-gray-500 dark:text-gray-400" />
+              <span>{contact.phone}</span>
+            </div>
+          )}
+        </CardContent>
+
+        {/* Footer: Categories */}
+        <CardFooter className="flex flex-wrap gap-2 mt-2">
+          {contact.categories.map((category, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 rounded-full"
+            >
+              {category}
+            </span>
+          ))}
+        </CardFooter>
+      
+    </Card>
     </motion.div>
   );
 };

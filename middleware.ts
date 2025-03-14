@@ -29,13 +29,13 @@ export async function middleware(request: NextRequest) {
   
   // If it's an auth page and user is authenticated, redirect to dashboard
   if (isAuthPage && isAuth) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
   
   // If it's not an auth page, not a public route, and user is not authenticated, 
   // redirect to signin
   if (!isAuthPage && !isPublicRoute && !isAuth) {
-    const signInUrl = new URL('/auth/signin', request.url);
+    const signInUrl = new URL('/api/auth/signin', request.url);
     signInUrl.searchParams.set('callbackUrl', request.url);
     return NextResponse.redirect(signInUrl);
   }

@@ -30,7 +30,7 @@ export default function SignIn() {
         router.push("/");
       }
     } catch (error) {
-      setError("Something went wrong. Please try again.", error);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

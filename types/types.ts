@@ -3,6 +3,7 @@ export interface  ContactType  {
     name: string,
     email: string,
     phone?: string,
-    categories: string[],
-    createdAt: string
+    categories: string[] | [],
+    createdAt: string,
+    avatar?: string
 };

@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
-// import { signOut } from "next-auth/react";// Make sure to adjust the import path
 import { ContactType } from "@/types/types";
 import Header from "./components/Header";
 import ContactList from "./components/ContactList";
@@ -15,7 +14,6 @@ export default function HomePage() {
   const { apiRequest, loading, error } = useApi();
   const [contacts, setContacts] = useState<ContactType[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("list");
 
   useEffect(() => {
     // If user is not authenticated and the auth check completed, redirect to signin
@@ -35,10 +33,7 @@ export default function HomePage() {
       setContacts(data);
     }
   };
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
+  
   const handleDeleteContact = async (id: string) => {
     try {
       const result = await apiRequest(`/api/contacts/${id}`, {
@@ -79,37 +74,16 @@ export default function HomePage() {
         {/*Header */}
         <Header
           userName={session?.user?.name}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
         />
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
-            <div className="relative w-64">
-              <input
-                type="text"
-                placeholder="Search contacts..."
-                className="w-full px-4 py-2 border rounded-md"
-                value={searchTerm}
-                onChange={handleSearch}
-              />
-              <svg
-                className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
+            {/* Add Contact */}
             <Link
               href="/contacts/new"
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="px-4 py-2 bg-green-600 text-white  hover:bg-green-700 rounded-3xl"
             >
               Add Contact
             </Link>
@@ -135,7 +109,6 @@ export default function HomePage() {
               <ContactList
                 contacts={filteredContacts}
                 onDelete={handleDeleteContact}
-                viewMode={viewMode}
               />
             </div>
           )}

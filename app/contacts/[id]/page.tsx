@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
+import { ContactType } from "@/types/types";
 
 export default function ContactForm() {
   const { data: session, status } = useSession();
@@ -25,6 +26,7 @@ export default function ContactForm() {
   const predefinedCategories = ["Work", "Family", "Friend", "Important"];
 
   useEffect(() => {
+    if(status === "unauthenticated") router.push("/api/auth/signin");
     const contactId = params?.id;
     if (contactId && contactId !== "new") {
       setIsEdit(true);
@@ -34,7 +36,7 @@ export default function ContactForm() {
 
   const fetchContact = async (id) => {
     console.log("Auth status: ", status)
-    const data = await apiRequest(`/api/contacts/${id}`);
+    const data: ContactType = await apiRequest(`/api/contacts/${id}`);
     if (data) {
       setFormData({
         name: data.name,
@@ -109,6 +111,7 @@ export default function ContactForm() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">
