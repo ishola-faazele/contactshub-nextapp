@@ -9,20 +9,11 @@ import { ContactType } from "@/types/types";
 import Header from "./components/Header";
 import ContactList from "./components/ContactList";
 import {
-  // Search,
   Plus,
   UserPlus,
   Filter,
-  Users,
-  BarChart2,
-  Calendar,
-  Settings,
-  Download,
-  Upload,
-  // Menu,
   LayoutGrid,
   List,
-  Star,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -72,16 +63,27 @@ export default function HomePage() {
     }
   }, [status, router]);
 
+  // Update favoriteContacts when contacts change
+  useEffect(() => {
+    const favoirites = contacts.filter((contact) => contact.favorite);
+    setFavoriteContacts(favoirites);
+  }, [contacts]);
+
+  // Update recentContacts when contacts change
+  useEffect(() => {
+    setRecentContacts(contacts.slice(0, 5));
+  }, [contacts]);
+
+  // Fetch analytics when contacts change
+  useEffect(() => {
+    fetchAnalytics();
+  }, [contacts]);
+
   // Fetch contacts from the API
   const fetchContacts = async () => {
     const data: ContactType[] | null = await apiRequest("/api/contacts");
     if (data) {
       setContacts(data);
-
-      // Mock favorite and recent contacts
-      const favorites = data.filter((_, index) => index % 5 === 0).slice(0, 5);
-      setFavoriteContacts(favorites);
-
       const recent = [...data].sort(() => 0.5 - Math.random()).slice(0, 5);
       setRecentContacts(recent);
     }
@@ -133,28 +135,51 @@ export default function HomePage() {
       console.error("Error deleting contact:", err);
     }
   };
+  const handleToggleFavorite = async (id: string) => {
+    try {
+      const result = await apiRequest(`/api/contacts/${id}/toggle-favorite`, {
+        method: "PATCH",
+      });
+      if (result !== null) {
+        setContacts(
+          contacts.map((contact) => {
+            if (contact.id === id) {
+              contact.favorite = !contact.favorite;
+            }
+            return contact;
+          })
+        );
+        fetchAnalytics(); // Refresh analytics after deletion
+      }
+    } catch (err) {
+      console.error("Error Toggling Favorites:", err);
+    }
+  };
   const handleContactSelect = (contact: ContactType) => {
     setSelectedContact(contact);
   };
+  const handleChangeStatus = async (id: string, newStatus: string) => {
+    const route: string = `/api/contacts/${id}/set-status`;
 
-  // Toggle a contact as favorite
-  const handleToggleFavorite = (contact: ContactType) => {
-    const isFavorite = favoriteContacts.some((c) => c.id === contact.id);
-    if (isFavorite) {
-      setFavoriteContacts(favoriteContacts.filter((c) => c.id !== contact.id));
-    } else {
-      setFavoriteContacts([...favoriteContacts, contact]);
+    try {
+      const result = await apiRequest(route, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (result) {
+        setContacts(
+          contacts.map((contact) => {
+            if (contact.id === id) {
+              contact.status = newStatus;
+            }
+            return contact;
+          })
+        );
+        console.log(contacts);
+      }
+    } catch (err) {
+      console.error("Error deleting contact:", err);
     }
-  };
-
-  // Handle bulk import (placeholder)
-  const handleBulkImport = () => {
-    alert("Import functionality would open here");
-  };
-
-  // Handle export contacts (placeholder)
-  const handleExportContacts = () => {
-    alert("Export functionality would execute here");
   };
 
   // Filter and sort contacts based on search term, filter category, and sort option
@@ -304,22 +329,6 @@ export default function HomePage() {
                   <UserPlus size={18} />
                   <span>Add Contact</span>
                 </Link>
-
-                <button
-                  onClick={handleBulkImport}
-                  className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                >
-                  <Upload size={18} />
-                  <span>Import</span>
-                </button>
-
-                <button
-                  onClick={handleExportContacts}
-                  className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                >
-                  <Download size={18} />
-                  <span>Export</span>
-                </button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -506,10 +515,11 @@ export default function HomePage() {
               </h2>
               <ContactList
                 contacts={favoriteContacts}
-                viewMode={viewMode}
+                // viewMode={viewMode}
                 onDelete={handleDeleteContact}
                 onToggleFavorite={handleToggleFavorite}
-                onSelect={handleContactSelect}
+                // onSelect={handleContactSelect}
+                onChangeStatus={handleChangeStatus}
               />
             </div>
 
@@ -520,10 +530,11 @@ export default function HomePage() {
               </h2>
               <ContactList
                 contacts={recentContacts}
-                viewMode={viewMode}
+                // viewMode={viewMode}
                 onDelete={handleDeleteContact}
                 onToggleFavorite={handleToggleFavorite}
-                onSelect={handleContactSelect}
+                // onSelect={handleContactSelect}
+                onChangeStatus={handleChangeStatus}
               />
             </div>
 
@@ -534,10 +545,11 @@ export default function HomePage() {
               </h2>
               <ContactList
                 contacts={filteredAndSortedContacts}
-                viewMode={viewMode}
+                // viewMode={viewMode}
                 onDelete={handleDeleteContact}
                 onToggleFavorite={handleToggleFavorite}
-                onSelect={handleContactSelect}
+                // onSelect={handleContactSelect}
+                onChangeStatus={handleChangeStatus}
               />
             </div>
           </main>

@@ -5,10 +5,14 @@ import ContactCard from "./ContactCard";
 interface ContactListInterface {
   contacts: ContactType[];
   onDelete: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
+  onChangeStatus: (id: string, status: string) => void;
 }
 const ContactList: React.FC<ContactListInterface> = ({
   contacts,
   onDelete,
+  onToggleFavorite,
+  onChangeStatus
 }) => {
   if (!contacts.length) {
     return (
@@ -22,15 +26,15 @@ const ContactList: React.FC<ContactListInterface> = ({
   }
 
   return (
-    <div
-      className="flex gap-2 flex-wrap"
-    >
+    <div className="flex gap-2 flex-wrap">
       <AnimatePresence>
         {contacts.map((contact) => (
           <ContactCard
             key={contact.id}
             contact={contact}
             onDelete={onDelete}
+            onToggleFavorite={onToggleFavorite}
+            onChangeStatus={onChangeStatus}
           />
         ))}
       </AnimatePresence>
