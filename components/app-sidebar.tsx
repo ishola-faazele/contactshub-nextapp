@@ -42,7 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     session && (
       <Sidebar {...props}>
-        <SidebarHeader>
+        {/* <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
@@ -58,7 +58,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+        </SidebarHeader> */}
+        <SidebarHeader>
+          <h2 className="text-lg font-bold">Contacthub</h2>
+          <div>group 20</div>
         </SidebarHeader>
+        {/* <SidebarContent>
+          <NavMain items={data.navMain} />
+        </SidebarContent> */}
         <SidebarContent>
           <NavMain items={data.navMain} />
         </SidebarContent>
@@ -67,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarOptInForm />
         </div>
       </SidebarFooter> */}
-        <SidebarRail />
+        {/* <SidebarRail /> */}
       </Sidebar>
     )
   );

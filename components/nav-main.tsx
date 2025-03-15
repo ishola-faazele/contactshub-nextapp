@@ -31,11 +31,11 @@ export function NavMain({
     }[];
   }[];
 }) {
-  const { isMobile } = useSidebar();
+  // const { isMobile } = useSidebar();
 
   return (
     <SidebarGroup>
-      <SidebarMenu>
+      {/* <SidebarMenu>
         {items.map((item) => (
           <DropdownMenu key={item.title}>
             <SidebarMenuItem>
@@ -63,7 +63,34 @@ export function NavMain({
             </SidebarMenuItem>
           </DropdownMenu>
         ))}
-      </SidebarMenu>
+      </SidebarMenu> */}
+      <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.url}>
+          <SidebarMenuButton asChild>
+            <Link href={item.url}>
+              {item.icon && <item.icon className="mr-2" />}
+              {item.title}
+            </Link>
+          </SidebarMenuButton>
+          
+          {item.items?.length ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger />
+              <DropdownMenuContent>
+                {item.items.map((subItem) => (
+                  <DropdownMenuItem key={subItem.url} asChild>
+                    <Link href={subItem.url}>
+                      {subItem.title}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
     </SidebarGroup>
   );
 }

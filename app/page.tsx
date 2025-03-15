@@ -2,26 +2,66 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Link from "next/link";
 import { ContactType } from "@/types/types";
 import Header from "./components/Header";
 import ContactList from "./components/ContactList";
-import {
-  Plus,
-  UserPlus,
-  Filter,
-  LayoutGrid,
-  List,
-} from "lucide-react";
+import { Plus, UserPlus, Filter, LayoutGrid, List } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 
-export default function HomePage() {
+// Page type interface to determine which content to display
+interface PageConfig {
+  title: string;
+  description: string;
+  showFavorites: boolean;
+  showRecent: boolean;
+  showDashboard: boolean;
+  statusFilter: string | null;
+}
+
+export default function ContactsPage() {
   // Session and routing
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Determine page type based on pathname
+  const getPageConfig = (): PageConfig => {
+    switch (pathname) {
+      case "/blocked":
+        return {
+          title: "Blocked Contacts",
+          description: "Manage your blocked contacts",
+          showFavorites: false,
+          showRecent: false,
+          showDashboard: false,
+          statusFilter: "blocked",
+        };
+      case "/bin":
+        return {
+          title: "Contacts in Bin",
+          description: "Recover or permanently delete contacts",
+          showFavorites: false,
+          showRecent: false,
+          showDashboard: false,
+          statusFilter: "bin",
+        };
+      default:
+        return {
+          title: "All Contacts",
+          description: "Manage your contacts",
+          showFavorites: true,
+          showRecent: true,
+          showDashboard: true,
+          statusFilter: "active",
+        };
+    }
+  };
+
+  const pageConfig = getPageConfig();
 
   // API and state management
   const { apiRequest, loading, error } = useApi();
@@ -35,7 +75,6 @@ export default function HomePage() {
   const [sortOption, setSortOption] = useState<"name" | "recent" | "category">(
     "name"
   );
-  const [isDashboardVisible, setIsDashboardVisible] = useState(true);
   const [analytics, setAnalytics] = useState({
     totalContacts: 0,
     categoriesDistribution: [] as { category: string; count: number }[],
@@ -59,46 +98,63 @@ export default function HomePage() {
 
     if (status === "authenticated") {
       fetchContacts();
-      fetchAnalytics();
     }
-  }, [status, router]);
+  }, [status, router, pathname]);
 
   // Update favoriteContacts when contacts change
   useEffect(() => {
-    const favoirites = contacts.filter((contact) => contact.favorite);
-    setFavoriteContacts(favoirites);
+    const favorites = contacts.filter(
+      (contact) =>
+        contact.favorite && (!contact.status || contact.status === "active")
+    );
+    setFavoriteContacts(favorites);
   }, [contacts]);
 
   // Update recentContacts when contacts change
   useEffect(() => {
-    setRecentContacts(contacts.slice(0, 5));
+    // Only get recent contacts from active contacts
+    const activeContacts = contacts.filter(
+      (c) => !c.status || c.status === "active"
+    );
+    setRecentContacts(activeContacts.slice(0, 5));
   }, [contacts]);
 
   // Fetch analytics when contacts change
   useEffect(() => {
-    fetchAnalytics();
-  }, [contacts]);
+    if (pageConfig.showDashboard) {
+      fetchAnalytics();
+    }
+  }, [contacts, pageConfig.showDashboard]);
 
   // Fetch contacts from the API
   const fetchContacts = async () => {
     const data: ContactType[] | null = await apiRequest("/api/contacts");
     if (data) {
       setContacts(data);
-      const recent = [...data].sort(() => 0.5 - Math.random()).slice(0, 5);
-      setRecentContacts(recent);
     }
   };
 
   // Fetch mock analytics data
   const fetchAnalytics = async () => {
+    // Only count active contacts for analytics
+    const activeContacts = contacts.filter(
+      (c) => !c.status || c.status === "active"
+    );
+
     setTimeout(() => {
       setAnalytics({
-        totalContacts: contacts.length,
+        totalContacts: activeContacts.length,
         categoriesDistribution: [
-          { category: "Work", count: Math.floor(contacts.length * 0.4) },
-          { category: "Family", count: Math.floor(contacts.length * 0.3) },
-          { category: "Friend", count: Math.floor(contacts.length * 0.2) },
-          { category: "Other", count: Math.floor(contacts.length * 0.1) },
+          { category: "Work", count: Math.floor(activeContacts.length * 0.4) },
+          {
+            category: "Family",
+            count: Math.floor(activeContacts.length * 0.3),
+          },
+          {
+            category: "Friend",
+            count: Math.floor(activeContacts.length * 0.2),
+          },
+          { category: "Other", count: Math.floor(activeContacts.length * 0.1) },
         ],
         recentActivity: [
           {
@@ -129,12 +185,15 @@ export default function HomePage() {
       });
       if (result !== null) {
         setContacts(contacts.filter((contact) => contact.id !== id));
-        fetchAnalytics(); // Refresh analytics after deletion
+        if (pageConfig.showDashboard) {
+          fetchAnalytics(); // Refresh analytics after deletion
+        }
       }
     } catch (err) {
       console.error("Error deleting contact:", err);
     }
   };
+
   const handleToggleFavorite = async (id: string) => {
     try {
       const result = await apiRequest(`/api/contacts/${id}/toggle-favorite`, {
@@ -144,20 +203,21 @@ export default function HomePage() {
         setContacts(
           contacts.map((contact) => {
             if (contact.id === id) {
-              contact.favorite = !contact.favorite;
+              return { ...contact, favorite: !contact.favorite };
             }
             return contact;
           })
         );
-        fetchAnalytics(); // Refresh analytics after deletion
       }
     } catch (err) {
       console.error("Error Toggling Favorites:", err);
     }
   };
+
   const handleContactSelect = (contact: ContactType) => {
     setSelectedContact(contact);
   };
+
   const handleChangeStatus = async (id: string, newStatus: string) => {
     const route: string = `/api/contacts/${id}/set-status`;
 
@@ -170,21 +230,29 @@ export default function HomePage() {
         setContacts(
           contacts.map((contact) => {
             if (contact.id === id) {
-              contact.status = newStatus;
+              return { ...contact, status: newStatus };
             }
             return contact;
           })
         );
-        console.log(contacts);
       }
     } catch (err) {
-      console.error("Error deleting contact:", err);
+      console.error("Error changing contact status:", err);
     }
   };
 
-  // Filter and sort contacts based on search term, filter category, and sort option
+  // Filter and sort contacts based on search term, filter category, sort option, and status
   const filteredAndSortedContacts = useMemo(() => {
-    let filtered = contacts.filter(
+    // First filter by status according to page type
+    let filtered = contacts.filter((contact) => {
+      if (pageConfig.statusFilter === "active") {
+        return !contact.status || contact.status === "active";
+      }
+      return contact.status === pageConfig.statusFilter;
+    });
+
+    // Then apply search filters
+    filtered = filtered.filter(
       (contact) =>
         contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,7 +270,7 @@ export default function HomePage() {
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case "recent":
-        // Random sorting for demonstration
+        // In a real app, you'd sort by creation/update date
         filtered.sort(() => 0.5 - Math.random());
         break;
       case "category":
@@ -216,7 +284,13 @@ export default function HomePage() {
     }
 
     return filtered;
-  }, [contacts, searchTerm, filterCategory, sortOption]);
+  }, [
+    contacts,
+    searchTerm,
+    filterCategory,
+    sortOption,
+    pageConfig.statusFilter,
+  ]);
 
   // Loading state
   if (status === "loading") {
@@ -236,80 +310,6 @@ export default function HomePage() {
   if (status === "authenticated") {
     return (
       <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Sidebar */}
-        {/* <div className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 shadow-lg">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                CH
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                ContactHub
-              </h1>
-            </Link>
-          </div>
-
-          <nav className="flex-1 p-4 space-y-2">
-            <Link
-              href="/"
-              className="flex items-center space-x-3 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-            >
-              <Users size={20} />
-              <span className="font-medium">Contacts</span>
-            </Link>
-
-            <Link
-              href="/favorites"
-              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            >
-              <Star size={20} />
-              <span>Favorites</span>
-            </Link>
-
-            <Link
-              href="/analytics"
-              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            >
-              <BarChart2 size={20} />
-              <span>Analytics</span>
-            </Link>
-
-            <Link
-              href="/events"
-              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            >
-              <Calendar size={20} />
-              <span>Events</span>
-            </Link>
-
-            <hr className="border-gray-200 dark:border-gray-700" />
-
-            <Link
-              href="/settings"
-              className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            >
-              <Settings size={20} />
-              <span>Settings</span>
-            </Link>
-          </nav>
-
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center font-medium">
-                {session?.user?.name?.slice(0, 2)?.toUpperCase() || "U"}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white truncate max-w-[120px]">
-                  {session?.user?.name || "User"}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
-                  {session?.user?.email || "user@example.com"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div> */}
-
         {/* Main content */}
         <div className="flex-1 flex flex-col">
           <Header
@@ -319,6 +319,16 @@ export default function HomePage() {
           />
 
           <main className="flex-1 p-6">
+            {/* Page Title */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {pageConfig.title}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {pageConfig.description}
+              </p>
+            </div>
+
             {/* Actions Bar */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
               <div className="flex items-center gap-2">
@@ -441,8 +451,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Dashboard Section */}
-            {isDashboardVisible && (
+            {/* Dashboard Section - Only show on active contacts page */}
+            {pageConfig.showDashboard && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Total Contacts Card */}
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
@@ -508,53 +518,71 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Favorites Section */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Favorites
-              </h2>
-              <ContactList
-                contacts={favoriteContacts}
-                // viewMode={viewMode}
-                onDelete={handleDeleteContact}
-                onToggleFavorite={handleToggleFavorite}
-                // onSelect={handleContactSelect}
-                onChangeStatus={handleChangeStatus}
-              />
-            </div>
+            {/* Favorites Section - Only show on active contacts page */}
+            {pageConfig.showFavorites && favoriteContacts.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Favorites
+                </h2>
+                <ContactList
+                  contacts={favoriteContacts}
+                  onDelete={handleDeleteContact}
+                  onToggleFavorite={handleToggleFavorite}
+                  onChangeStatus={handleChangeStatus}
+                />
+              </div>
+            )}
 
-            {/* Recent Contacts Section */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Recent Contacts
-              </h2>
-              <ContactList
-                contacts={recentContacts}
-                // viewMode={viewMode}
-                onDelete={handleDeleteContact}
-                onToggleFavorite={handleToggleFavorite}
-                // onSelect={handleContactSelect}
-                onChangeStatus={handleChangeStatus}
-              />
-            </div>
+            {/* Recent Contacts Section - Only show on active contacts page */}
+            {pageConfig.showRecent && recentContacts.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Recent Contacts
+                </h2>
+                <ContactList
+                  contacts={recentContacts}
+                  onDelete={handleDeleteContact}
+                  onToggleFavorite={handleToggleFavorite}
+                  onChangeStatus={handleChangeStatus}
+                />
+              </div>
+            )}
 
-            {/* All Contacts Section */}
+            {/* Main Contacts Section */}
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                All Contacts
+                {pageConfig.statusFilter === "blocked"
+                  ? "Blocked Contacts"
+                  : pageConfig.statusFilter === "bin"
+                  ? "Contacts in Bin"
+                  : "All Contacts"}
               </h2>
-              <ContactList
-                contacts={filteredAndSortedContacts}
-                // viewMode={viewMode}
-                onDelete={handleDeleteContact}
-                onToggleFavorite={handleToggleFavorite}
-                // onSelect={handleContactSelect}
-                onChangeStatus={handleChangeStatus}
-              />
+
+              {filteredAndSortedContacts.length > 0 ? (
+                <ContactList
+                  contacts={filteredAndSortedContacts}
+                  onDelete={handleDeleteContact}
+                  onToggleFavorite={handleToggleFavorite}
+                  onChangeStatus={handleChangeStatus}
+                />
+              ) : (
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-sm text-center">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {pageConfig.statusFilter === "blocked"
+                      ? "No blocked contacts found."
+                      : pageConfig.statusFilter === "bin"
+                      ? "No contacts in bin."
+                      : "No contacts found."}
+                  </p>
+                </div>
+              )}
             </div>
           </main>
         </div>
       </div>
     );
   }
+
+  // Default return (should not reach here)
+  return null;
 }
