@@ -4,23 +4,16 @@ import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
-import Link from "next/link";
 import { ContactType } from "@/types/types";
-import Header from "./components/Header";
-import ContactList from "./components/ContactList";
-import { Plus, UserPlus, Filter, LayoutGrid, List } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
-
-// Page type interface to determine which content to display
-interface PageConfig {
-  title: string;
-  description: string;
-  showFavorites: boolean;
-  showRecent: boolean;
-  showDashboard: boolean;
-  statusFilter: string | null;
-}
+import {
+  getPageConfig,
+  getAnalytics,
+  getFilteredAndSortedContacts,
+} from "@/lib/utils";
+import Header from "../components/Header";
+import ContactList from "../components/ContactList";
+import ActionBar from "@/components/ActionBar";
+import Dashboard from "@/components/Dashboard";
 
 export default function ContactsPage() {
   // Session and routing
@@ -29,12 +22,11 @@ export default function ContactsPage() {
   const pathname = usePathname();
 
   // API and state management
-  const { apiRequest, loading, error } = useApi();
+  const { apiRequest, error } = useApi();
   const [contacts, setContacts] = useState<ContactType[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [sortOption, setSortOption] = useState<"name" | "recent" | "category">(
     "name"
   );
@@ -44,53 +36,23 @@ export default function ContactsPage() {
     if (status === "unauthenticated") {
       router.push("/api/auth/signin");
     }
-
     if (status === "authenticated") {
       // Fetch contacts from the API
       const fetchContacts = async () => {
         const data: ContactType[] | null = await apiRequest("/api/contacts");
         if (data) {
           setContacts(data);
+        } else if (error) {
+          console.error("Error fetching contacts:", error);
         }
       };
       fetchContacts();
     }
-  }, [status, router, pathname, apiRequest]); // update the dependency array
+  }, [status, router, pathname, apiRequest, error]); // update the dependency array
 
   // Determine page type based on pathname
   const pageConfig = useMemo(() => {
-    const getPageConfig = (): PageConfig => {
-      switch (pathname) {
-        case "/blocked":
-          return {
-            title: "Blocked Contacts",
-            description: "Manage your blocked contacts",
-            showFavorites: false,
-            showRecent: false,
-            showDashboard: false,
-            statusFilter: "blocked",
-          };
-        case "/bin":
-          return {
-            title: "Contacts in Bin",
-            description: "Recover or permanently delete contacts",
-            showFavorites: false,
-            showRecent: false,
-            showDashboard: false,
-            statusFilter: "bin",
-          };
-        default:
-          return {
-            title: "All Contacts",
-            description: "Manage your contacts",
-            showFavorites: true,
-            showRecent: true,
-            showDashboard: true,
-            statusFilter: "active",
-          };
-      }
-    };
-    return getPageConfig();
+    return getPageConfig(pathname);
   }, [pathname]);
 
   // Extract unique categories from contacts
@@ -101,55 +63,13 @@ export default function ContactsPage() {
 
   // Filter and sort contacts based on search term, filter category, sort option, and status
   const filteredAndSortedContacts = useMemo(() => {
-    // Start with all contacts, then apply filters in sequence
-    let filtered = contacts;
-
-    // Apply status filter
-    filtered = filtered.filter(
-      (contact) =>
-        !pageConfig.statusFilter || contact.status === pageConfig.statusFilter
+    return getFilteredAndSortedContacts(
+      contacts,
+      pageConfig.statusFilter,
+      searchTerm,
+      filterCategory,
+      sortOption
     );
-
-    // Apply search term filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (contact) =>
-          contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (contact?.phone?.toLowerCase() || "").includes(
-            searchTerm.toLowerCase()
-          )
-      );
-    }
-
-    // Apply category filter
-    if (filterCategory) {
-      filtered = filtered.filter((contact) =>
-        contact.categories.includes(filterCategory)
-      );
-    }
-
-    // Apply sorting once
-    const sorted = [...filtered];
-
-    switch (sortOption) {
-      case "name":
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "recent":
-        // Replace random sort with a more stable, deterministic sort if possible
-        // If you need actual recency, consider adding a 'lastUpdated' field to contacts
-        break;
-      case "category":
-        sorted.sort((a, b) => {
-          const catA = a.categories[0] || "";
-          const catB = b.categories[0] || "";
-          return catA.localeCompare(catB);
-        });
-        break;
-    }
-
-    return sorted;
   }, [
     contacts,
     pageConfig.statusFilter,
@@ -178,41 +98,8 @@ export default function ContactsPage() {
 
   // Generate analytics data using useMemo
   const analytics = useMemo(() => {
-    if (!pageConfig.showDashboard) {
-      return {
-        totalContacts: 0,
-        categoriesDistribution: [],
-        recentActivity: [],
-      };
-    }
-
-    return {
-      totalContacts: activeContacts.length,
-      categoriesDistribution: [
-        { category: "Work", count: Math.floor(activeContacts.length * 0.4) },
-        { category: "Family", count: Math.floor(activeContacts.length * 0.3) },
-        { category: "Friend", count: Math.floor(activeContacts.length * 0.2) },
-        { category: "Other", count: Math.floor(activeContacts.length * 0.1) },
-      ],
-      recentActivity: [
-        {
-          action: "Added",
-          contact: "John Doe",
-          date: format(new Date(), "MMM dd, yyyy"),
-        },
-        {
-          action: "Updated",
-          contact: "Jane Smith",
-          date: format(new Date(Date.now() - 86400000), "MMM dd, yyyy"),
-        },
-        {
-          action: "Deleted",
-          contact: "Robert Johnson",
-          date: format(new Date(Date.now() - 172800000), "MMM dd, yyyy"),
-        },
-      ],
-    };
-  }, [pageConfig.showDashboard, activeContacts]);
+    return getAnalytics(pageConfig.statusFilter, activeContacts);
+  }, [pageConfig.statusFilter, activeContacts]);
 
   // Delete a contact
   const handleDeleteContact = async (id: string) => {
@@ -227,7 +114,7 @@ export default function ContactsPage() {
       console.error("Error deleting contact:", err);
     }
   };
-
+  // Toggle favorite
   const handleToggleFavorite = async (id: string) => {
     try {
       const result = await apiRequest(`/api/contacts/${id}/toggle-favorite`, {
@@ -247,7 +134,7 @@ export default function ContactsPage() {
       console.error("Error Toggling Favorites:", err);
     }
   };
-
+  // Change status
   const handleChangeStatus = async (id: string, newStatus: string) => {
     const route: string = `/api/contacts/${id}/set-status`;
 
@@ -309,236 +196,60 @@ export default function ContactsPage() {
             </div>
 
             {/* Actions Bar */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/contacts/new"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-                >
-                  <UserPlus size={18} />
-                  <span>Add Contact</span>
-                </Link>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-md ${
-                    viewMode === "grid"
-                      ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
-                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700"
-                  }`}
-                >
-                  <LayoutGrid size={18} />
-                </button>
-
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-md ${
-                    viewMode === "list"
-                      ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
-                      : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700"
-                  }`}
-                >
-                  <List size={18} />
-                </button>
-
-                <div className="relative">
-                  <button
-                    onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-                    className="p-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                  >
-                    <Filter size={18} />
-                    <span>Filter</span>
-                  </button>
-
-                  <AnimatePresence>
-                    {isFilterPanelOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-0 mt-2 w-60 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50"
-                      >
-                        <div className="p-4 space-y-4">
-                          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                            Filter by Category
-                          </h3>
-                          <div className="space-y-2">
-                            {categories.map((category) => (
-                              <label
-                                key={category}
-                                className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={filterCategory === category}
-                                  onChange={() =>
-                                    setFilterCategory(
-                                      filterCategory === category
-                                        ? null
-                                        : category
-                                    )
-                                  }
-                                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                />
-                                <span>{category}</span>
-                              </label>
-                            ))}
-                          </div>
-                          <hr className="border-gray-200 dark:border-gray-700" />
-                          <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                            Sort By
-                          </h3>
-                          <div className="space-y-2">
-                            <button
-                              onClick={() => setSortOption("name")}
-                              className={`w-full text-left p-2 rounded-md ${
-                                sortOption === "name"
-                                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
-                                  : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                              }`}
-                            >
-                              Name
-                            </button>
-                            <button
-                              onClick={() => setSortOption("recent")}
-                              className={`w-full text-left p-2 rounded-md ${
-                                sortOption === "recent"
-                                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
-                                  : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                              }`}
-                            >
-                              Recently Added
-                            </button>
-                            <button
-                              onClick={() => setSortOption("category")}
-                              className={`w-full text-left p-2 rounded-md ${
-                                sortOption === "category"
-                                  ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
-                                  : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                              }`}
-                            >
-                              Category
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
+            <ActionBar
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+              categories={categories}
+              filterCategory={filterCategory}
+              setFilterCategory={setFilterCategory}
+              sortOption={sortOption}
+              setSortOption={setSortOption}
+            />
 
             {/* Dashboard Section - Only show on active contacts page */}
-            {pageConfig.showDashboard && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Total Contacts Card */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    Total Contacts
-                  </h3>
-                  <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
-                    {analytics.totalContacts}
-                  </p>
-                </div>
-
-                {/* Categories Distribution Card */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    Categories
-                  </h3>
-                  <div className="mt-4 space-y-2">
-                    {analytics.categoriesDistribution.map((category) => (
-                      <div
-                        key={category.category}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {category.category}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {category.count}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recent Activity Card */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                    Recent Activity
-                  </h3>
-                  <div className="mt-4 space-y-3">
-                    {analytics.recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <div className="h-8 w-8 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center">
-                          {activity.action === "Added" && <Plus size={16} />}
-                          {activity.action === "Updated" && (
-                            <UserPlus size={16} />
-                          )}
-                          {activity.action === "Deleted" && (
-                            <UserPlus size={16} />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-900 dark:text-white">
-                            {activity.action} {activity.contact}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {activity.date}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {pageConfig.statusFilter === "active" && (
+              <Dashboard analytics={analytics} />
             )}
 
             {/* Favorites Section - Only show on active contacts page */}
-            {pageConfig.showFavorites && favoriteContacts.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Favorites
-                </h2>
-                <ContactList
-                  contacts={favoriteContacts}
-                  onDelete={handleDeleteContact}
-                  onToggleFavorite={handleToggleFavorite}
-                  onChangeStatus={handleChangeStatus}
-                />
-              </div>
-            )}
+            {pageConfig.statusFilter === "active" &&
+              favoriteContacts.length > 0 && (
+                <div className="mb-8">
+                  <ContactList
+                    sectionName="Favorite Contacts"
+                    contacts={favoriteContacts}
+                    onDelete={handleDeleteContact}
+                    onToggleFavorite={handleToggleFavorite}
+                    onChangeStatus={handleChangeStatus}
+                  />
+                </div>
+              )}
 
             {/* Recent Contacts Section - Only show on active contacts page */}
-            {pageConfig.showRecent && recentContacts.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Recent Contacts
-                </h2>
-                <ContactList
-                  contacts={recentContacts}
-                  onDelete={handleDeleteContact}
-                  onToggleFavorite={handleToggleFavorite}
-                  onChangeStatus={handleChangeStatus}
-                />
-              </div>
-            )}
+            {pageConfig.statusFilter === "active" &&
+              recentContacts.length > 0 && (
+                <div className="mb-8">
+                  <ContactList
+                    sectionName="Recently Added Contacts"
+                    contacts={recentContacts}
+                    onDelete={handleDeleteContact}
+                    onToggleFavorite={handleToggleFavorite}
+                    onChangeStatus={handleChangeStatus}
+                  />
+                </div>
+              )}
 
             {/* Main Contacts Section */}
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                {pageConfig.statusFilter === "blocked"
-                  ? "Blocked Contacts"
-                  : pageConfig.statusFilter === "bin"
-                  ? "Contacts in Bin"
-                  : "All Contacts"}
-              </h2>
-
               {filteredAndSortedContacts.length > 0 ? (
                 <ContactList
+                  sectionName={
+                    pageConfig.statusFilter === "blocked"
+                      ? "Blocked Contacts"
+                      : pageConfig.statusFilter === "bin"
+                      ? "Contacts in Bin"
+                      : "All Contacts"
+                  }
                   contacts={filteredAndSortedContacts}
                   onDelete={handleDeleteContact}
                   onToggleFavorite={handleToggleFavorite}

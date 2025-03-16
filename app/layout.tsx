@@ -6,7 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Contacthub",
+  title: "ContactsHub",
   description: "Manage your contacts with ease",
 };
 
@@ -23,12 +23,10 @@ export default function RootLayout({
             <AppSidebar />
             <main className="flex flex-1">
               <SidebarTrigger />
-              <div className="flex-1">
-                {children}
-              </div>
+              <div className="flex-1">{children}</div>
             </main>
           </SidebarProvider>
-          </Providers>
+        </Providers>
       </body>
     </html>
   );

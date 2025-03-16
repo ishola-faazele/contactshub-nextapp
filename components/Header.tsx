@@ -118,7 +118,7 @@ const Header: React.FC<HeaderProps> = ({
                   CH
                 </div>
                 <h1 className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">
-                  ContactHub
+                  ContactsHub
                 </h1>
               </Link>
             </motion.div>

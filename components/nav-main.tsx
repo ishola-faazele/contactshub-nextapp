@@ -13,7 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 
@@ -31,66 +30,32 @@ export function NavMain({
     }[];
   }[];
 }) {
-  // const { isMobile } = useSidebar();
-
   return (
     <SidebarGroup>
-      {/* <SidebarMenu>
+      <SidebarMenu>
         {items.map((item) => (
-          <DropdownMenu key={item.title}>
-            <SidebarMenuItem>
-              <DropdownMenuTrigger asChild>
-                <div>
-                  <SidebarMenuButton className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                    {item.icon && <item.icon size={16} />} {item.title}
-                  </SidebarMenuButton>
-                </div>
-              </DropdownMenuTrigger>
-              {item.items?.length ? (
-                <DropdownMenuContent
-                  side={isMobile ? "bottom" : "right"}
-                  align={isMobile ? "end" : "start"}
-                  className="min-w-56 rounded-lg"
-                >
-                  {item.items.map((item) => (
-                    <DropdownMenuItem asChild key={item.title}>
-                      <Link href={item.url}>{item.title}</Link>
-                      console.log(item.url)
+          <SidebarMenuItem key={item.url}>
+            <SidebarMenuButton asChild>
+              <Link href={item.url}>
+                {item.icon && <item.icon className="mr-2" />}
+                {item.title}
+              </Link>
+            </SidebarMenuButton>
+            {item.items?.length ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger />
+                <DropdownMenuContent>
+                  {item.items.map((subItem) => (
+                    <DropdownMenuItem key={subItem.url} asChild>
+                      <Link href={subItem.url}>{subItem.title}</Link>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
-              ) : null}
-            </SidebarMenuItem>
-          </DropdownMenu>
+              </DropdownMenu>
+            ) : null}
+          </SidebarMenuItem>
         ))}
-      </SidebarMenu> */}
-      <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuItem key={item.url}>
-          <SidebarMenuButton asChild>
-            <Link href={item.url}>
-              {item.icon && <item.icon className="mr-2" />}
-              {item.title}
-            </Link>
-          </SidebarMenuButton>
-          
-          {item.items?.length ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger />
-              <DropdownMenuContent>
-                {item.items.map((subItem) => (
-                  <DropdownMenuItem key={subItem.url} asChild>
-                    <Link href={subItem.url}>
-                      {subItem.title}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-        </SidebarMenuItem>
-      ))}
-    </SidebarMenu>
+      </SidebarMenu>
     </SidebarGroup>
   );
 }

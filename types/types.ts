@@ -15,3 +15,9 @@ export enum ContactStatus {
   BLOCKED = "blocked",
   BIN = "bin"
 }
+
+export interface PageConfig {
+  title: string;
+  description: string;
+  statusFilter: string;
+}

@@ -1,22 +1,18 @@
 "use client";
 import * as React from "react";
-import { GalleryVerticalEnd, LucideTrash, Contact, Lock } from "lucide-react";
-import Link from "next/link";
+import { LucideTrash, Contact, Lock } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { useSession } from "next-auth/react";
 // import { SidebarOptInForm } from "@/components/sidebar-opt-in-form"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
+  // SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
+  // SidebarRail,
 } from "@/components/ui/sidebar";
 
-// This is sample data.
+// This is the various statutes of of contacts
 const data = {
   navMain: [
     {
@@ -42,30 +38,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     session && (
       <Sidebar {...props}>
-        {/* <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <Link href="#" className="cursor-pointer">
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <GalleryVerticalEnd className="size-4" />
-                  </div>
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-medium">Contacthub</span>
-                    <span className="">group 20</span>
-                  </div>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader> */}
         <SidebarHeader>
-          <h2 className="text-lg font-bold">Contacthub</h2>
+          <h2 className="text-lg font-bold">ContactsHub</h2>
           <div>group 20</div>
         </SidebarHeader>
-        {/* <SidebarContent>
-          <NavMain items={data.navMain} />
-        </SidebarContent> */}
         <SidebarContent>
           <NavMain items={data.navMain} />
         </SidebarContent>
