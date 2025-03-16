@@ -1,12 +1,7 @@
 "use client";
 import { ContactType } from "@/types/types";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Mail,
@@ -24,11 +19,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  // DropdownMenuLabel,
-  // DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ContactCard component to display each contact and handle the modal
 interface ContactCardInterface {
@@ -44,12 +43,50 @@ const ContactCard: React.FC<ContactCardInterface> = ({
   onToggleFavorite,
   onChangeStatus,
 }) => {
+  // Truncate email function
   const truncateEmail = (email: string, maxLength = 15) => {
     if (email.length > maxLength) {
-      return email.slice(0, 3) + "..." + email.slice(-10); // Keep first 10 and last 10 characters
+      return email.slice(0, 3) + "..." + email.slice(-10);
     }
     return email;
   };
+
+  // Truncate name function
+  const truncateName = (name: string, maxLength = 20) => {
+    if (name.length > maxLength) {
+      const names = name.split(" ");
+      if (names.length > 1) {
+        return `${names[0]} ... ${names[names.length - 1]}`;
+      }
+      return name.slice(0, maxLength - 3) + "...";
+    }
+    return name;
+  };
+
+  // Generate random color for avatar based on contact id
+  const generateAvatarColor = (id: string) => {
+    const colors = [
+      "bg-yellow-500",
+      "bg-blue-500",
+      "bg-green-500",
+      "bg-red-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-indigo-500",
+      "bg-orange-500",
+      "bg-teal-500",
+      "bg-cyan-500",
+      "bg-lime-500",
+      "bg-emerald-500",
+    ];
+
+    // Use the id to consistently select the same color for a contact
+    const colorIndex =
+      id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+      colors.length;
+    return colors[colorIndex];
+  };
+
   const getStatusMenuItems = () => {
     const status = contact.status || "active"; // Default to active if status is undefined
 
@@ -61,16 +98,16 @@ const ContactCard: React.FC<ContactCardInterface> = ({
               href={`/contacts/${contact.id}`}
               className="flex items-center gap-2 w-full"
             >
-              <Pencil /> Edit Contact
+              <Pencil className="w-4 h-4" /> Edit Contact
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => onChangeStatus(contact.id, "blocked")}
           >
-            <Lock /> Block Contact
+            <Lock className="w-4 h-4" /> Block Contact
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onChangeStatus(contact.id, "bin")}>
-            <Trash2 /> Move To Bin
+            <Trash2 className="w-4 h-4" /> Move To Bin
           </DropdownMenuItem>
         </>
       );
@@ -80,10 +117,10 @@ const ContactCard: React.FC<ContactCardInterface> = ({
           <DropdownMenuItem
             onClick={() => onChangeStatus(contact.id, "active")}
           >
-            <Unlock /> Unblock Contact
+            <Unlock className="w-4 h-4" /> Unblock Contact
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onChangeStatus(contact.id, "bin")}>
-            <Trash2 /> Move To Bin
+            <Trash2 className="w-4 h-4" /> Move To Bin
           </DropdownMenuItem>
         </>
       );
@@ -93,71 +130,52 @@ const ContactCard: React.FC<ContactCardInterface> = ({
           <DropdownMenuItem
             onClick={() => onChangeStatus(contact.id, "active")}
           >
-            <RefreshCw /> Restore Contact
+            <RefreshCw className="w-4 h-4" /> Restore Contact
           </DropdownMenuItem>
         </>
       );
     }
 
-    // Always show delete forever option for all statuses
     return null;
   };
 
   return (
     <motion.div
       key={contact.id}
-      className="relative"
+      className="relative flex flex-col"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="flex flex-col px-2 py-4 w-64 shadow-md hover:shadow-lg transition-shadow rounded-2xl dark:bg-gray-800 cursor-pointer">
+      <Card className="flex flex-col px-2 py-3 w-48 md:w-64 shadow-md hover:shadow-lg transition-shadow rounded-2xl dark:bg-gray-800 cursor-pointer">
         {/* Header: Avatar + More Options */}
-        <CardHeader className="flex flex-row items-center justify-between">
-          <Avatar className="w-14 h-14">
+        <CardHeader className="flex flex-row items-center justify-between p-3">
+          <Avatar className="w-12 h-12 md:w-14 md:h-14">
             <AvatarImage src={contact.avatar} alt={contact.name} />
-            <AvatarFallback className="bg-red-500 text-white text-xl font-semibold">
+            <AvatarFallback
+              className={`${generateAvatarColor(
+                contact.id
+              )} text-white text-lg font-semibold`}
+            >
               {contact.name.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-row items-center gap-2 justify-between ">
-            {contact.status === "active" && (
-              <Star
-                className={`${
-                  contact.favorite ? "text-yellow-400" : "text-gray-500"
-                } dark:text-gray-400 hover:text-yellow-400 dark:hover:text-gray-200 cursor-pointer`}
-                onClick={() => onToggleFavorite(contact.id)}
-              />
-            )}
+          <div className="flex flex-row items-center gap-2 justify-between">
+            <Star
+              className={`w-5 h-5 ${
+                contact.favorite ? "text-yellow-400" : "text-gray-300"
+              } hover:text-yellow-400 cursor-pointer`}
+              onClick={() => onToggleFavorite(contact.id)}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <MoreVertical className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer" />
+                <MoreVertical className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer" />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {/* <DropdownMenuLabel>More Actions</DropdownMenuLabel>
-                <DropdownMenuSeparator /> */}
-                {/* <DropdownMenuItem>
-                  <Link
-                    href={`/contacts/${contact.id}`}
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <Pencil /> Edit Contact
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onChangeStatus(contact.id, "blocked")}
-                >
-                  <Lock /> Block Contact
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onChangeStatus(contact.id, "bin")}
-                >
-                  <Trash2 /> Move To Bin
-                </DropdownMenuItem> */}
                 {getStatusMenuItems()}
                 <DropdownMenuItem onClick={() => onDelete(contact.id)}>
-                  <XCircle /> Delete Forever
+                  <XCircle className="w-4 h-4" /> Delete Forever
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -165,37 +183,71 @@ const ContactCard: React.FC<ContactCardInterface> = ({
         </CardHeader>
 
         {/* Contact Details */}
-        <CardContent className="mt-2 space-y-2">
+        <CardContent className="py-1 space-y-2">
           <div>
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {contact.name}
-            </p>
-            {/* <p className="text-sm text-gray-500 dark:text-gray-400">{contact.role}</p> */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                    {truncateName(contact.name)}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{contact.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <Mail size={16} className="text-gray-500 dark:text-gray-400" />
-            <span>{truncateEmail(contact.email)}</span>
+            <Mail
+              size={16}
+              className="text-gray-500 dark:text-gray-400 min-w-4"
+            />
+            <span className="truncate">{truncateEmail(contact.email)}</span>
           </div>
           {contact.phone && (
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Phone size={16} className="text-gray-500 dark:text-gray-400" />
-              <span>{contact.phone}</span>
+              <Phone
+                size={16}
+                className="text-gray-500 dark:text-gray-400 min-w-4"
+              />
+              <span className="truncate">{contact.phone}</span>
             </div>
           )}
         </CardContent>
-
-        {/* Footer: Categories */}
-        <CardFooter className="flex flex-wrap gap-2 mt-2">
-          {contact.categories.map((category, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 rounded-full"
-            >
-              {category}
-            </span>
-          ))}
-        </CardFooter>
       </Card>
+
+      {/* Categories outside the card */}
+      <div className="flex flex-wrap gap-2 mt-2 ml-2">
+        {contact.categories.length > 0 && (
+          <>
+            {contact.categories.length > 0 && (
+              <span className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 rounded-full">
+                {contact.categories[0]}
+              </span>
+            )}
+
+            {contact.categories.length > 1 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer">
+                      +{contact.categories.length - 1}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="space-y-1">
+                      {contact.categories.slice(1).map((category, index) => (
+                        <p key={index}>{category}</p>
+                      ))}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </>
+        )}
+      </div>
     </motion.div>
   );
 };
