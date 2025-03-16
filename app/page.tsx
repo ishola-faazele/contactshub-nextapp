@@ -28,46 +28,9 @@ export default function ContactsPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Determine page type based on pathname
-  const getPageConfig = (): PageConfig => {
-    switch (pathname) {
-      case "/blocked":
-        return {
-          title: "Blocked Contacts",
-          description: "Manage your blocked contacts",
-          showFavorites: false,
-          showRecent: false,
-          showDashboard: false,
-          statusFilter: "blocked",
-        };
-      case "/bin":
-        return {
-          title: "Contacts in Bin",
-          description: "Recover or permanently delete contacts",
-          showFavorites: false,
-          showRecent: false,
-          showDashboard: false,
-          statusFilter: "bin",
-        };
-      default:
-        return {
-          title: "All Contacts",
-          description: "Manage your contacts",
-          showFavorites: true,
-          showRecent: true,
-          showDashboard: true,
-          statusFilter: "active",
-        };
-    }
-  };
-
-  const pageConfig = getPageConfig();
-
   // API and state management
   const { apiRequest, loading, error } = useApi();
   const [contacts, setContacts] = useState<ContactType[]>([]);
-  const [favoriteContacts, setFavoriteContacts] = useState<ContactType[]>([]);
-  const [recentContacts, setRecentContacts] = useState<ContactType[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
@@ -75,20 +38,6 @@ export default function ContactsPage() {
   const [sortOption, setSortOption] = useState<"name" | "recent" | "category">(
     "name"
   );
-  const [analytics, setAnalytics] = useState({
-    totalContacts: 0,
-    categoriesDistribution: [] as { category: string; count: number }[],
-    recentActivity: [] as { action: string; contact: string; date: string }[],
-  });
-  const [selectedContact, setSelectedContact] = useState<ContactType | null>(
-    null
-  );
-
-  // Extract unique categories from contacts
-  const categories = useMemo(() => {
-    const allCategories = contacts.flatMap((contact) => contact.categories);
-    return [...new Set(allCategories)];
-  }, [contacts]);
 
   // Fetch contacts and analytics when authenticated
   useEffect(() => {
@@ -97,85 +46,173 @@ export default function ContactsPage() {
     }
 
     if (status === "authenticated") {
+      // Fetch contacts from the API
+      const fetchContacts = async () => {
+        const data: ContactType[] | null = await apiRequest("/api/contacts");
+        if (data) {
+          setContacts(data);
+        }
+      };
       fetchContacts();
     }
-  }, [status, router, pathname]);
+  }, [status, router, pathname, apiRequest]); // update the dependency array
+
+  // Determine page type based on pathname
+  const pageConfig = useMemo(() => {
+    const getPageConfig = (): PageConfig => {
+      switch (pathname) {
+        case "/blocked":
+          return {
+            title: "Blocked Contacts",
+            description: "Manage your blocked contacts",
+            showFavorites: false,
+            showRecent: false,
+            showDashboard: false,
+            statusFilter: "blocked",
+          };
+        case "/bin":
+          return {
+            title: "Contacts in Bin",
+            description: "Recover or permanently delete contacts",
+            showFavorites: false,
+            showRecent: false,
+            showDashboard: false,
+            statusFilter: "bin",
+          };
+        default:
+          return {
+            title: "All Contacts",
+            description: "Manage your contacts",
+            showFavorites: true,
+            showRecent: true,
+            showDashboard: true,
+            statusFilter: "active",
+          };
+      }
+    };
+    return getPageConfig();
+  }, [pathname]);
+
+  // Extract unique categories from contacts
+  const categories = useMemo(() => {
+    const allCategories = contacts.flatMap((contact) => contact.categories);
+    return [...new Set(allCategories)];
+  }, [contacts]);
+
+  // Filter and sort contacts based on search term, filter category, sort option, and status
+  const filteredAndSortedContacts = useMemo(() => {
+    // Start with all contacts, then apply filters in sequence
+    let filtered = contacts;
+
+    // Apply status filter
+    filtered = filtered.filter(
+      (contact) =>
+        !pageConfig.statusFilter || contact.status === pageConfig.statusFilter
+    );
+
+    // Apply search term filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (contact) =>
+          contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (contact?.phone?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          )
+      );
+    }
+
+    // Apply category filter
+    if (filterCategory) {
+      filtered = filtered.filter((contact) =>
+        contact.categories.includes(filterCategory)
+      );
+    }
+
+    // Apply sorting once
+    const sorted = [...filtered];
+
+    switch (sortOption) {
+      case "name":
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "recent":
+        // Replace random sort with a more stable, deterministic sort if possible
+        // If you need actual recency, consider adding a 'lastUpdated' field to contacts
+        break;
+      case "category":
+        sorted.sort((a, b) => {
+          const catA = a.categories[0] || "";
+          const catB = b.categories[0] || "";
+          return catA.localeCompare(catB);
+        });
+        break;
+    }
+
+    return sorted;
+  }, [
+    contacts,
+    pageConfig.statusFilter,
+    searchTerm,
+    filterCategory,
+    sortOption,
+  ]);
+
+  // Filter active contacts using useMemo
+  const activeContacts = useMemo(
+    () => contacts.filter((c) => !c.status || c.status === "active"),
+    [contacts]
+  );
 
   // Update favoriteContacts when contacts change
-  useEffect(() => {
-    const favorites = contacts.filter(
-      (contact) =>
-        contact.favorite && (!contact.status || contact.status === "active")
-    );
-    setFavoriteContacts(favorites);
-  }, [contacts]);
+  const favoriteContacts = useMemo(
+    () => activeContacts.filter((contact) => contact.favorite),
+    [activeContacts]
+  );
 
-  // Update recentContacts when contacts change
-  useEffect(() => {
-    // Only get recent contacts from active contacts
-    const activeContacts = contacts.filter(
-      (c) => !c.status || c.status === "active"
-    );
-    setRecentContacts(activeContacts.slice(0, 5));
-  }, [contacts]);
+  // Get recent contacts using useMemo
+  const recentContacts = useMemo(
+    () => activeContacts.slice(0, 5),
+    [activeContacts]
+  );
 
-  // Fetch analytics when contacts change
-  useEffect(() => {
-    if (pageConfig.showDashboard) {
-      fetchAnalytics();
+  // Generate analytics data using useMemo
+  const analytics = useMemo(() => {
+    if (!pageConfig.showDashboard) {
+      return {
+        totalContacts: 0,
+        categoriesDistribution: [],
+        recentActivity: [],
+      };
     }
-  }, [contacts, pageConfig.showDashboard]);
 
-  // Fetch contacts from the API
-  const fetchContacts = async () => {
-    const data: ContactType[] | null = await apiRequest("/api/contacts");
-    if (data) {
-      setContacts(data);
-    }
-  };
-
-  // Fetch mock analytics data
-  const fetchAnalytics = async () => {
-    // Only count active contacts for analytics
-    const activeContacts = contacts.filter(
-      (c) => !c.status || c.status === "active"
-    );
-
-    setTimeout(() => {
-      setAnalytics({
-        totalContacts: activeContacts.length,
-        categoriesDistribution: [
-          { category: "Work", count: Math.floor(activeContacts.length * 0.4) },
-          {
-            category: "Family",
-            count: Math.floor(activeContacts.length * 0.3),
-          },
-          {
-            category: "Friend",
-            count: Math.floor(activeContacts.length * 0.2),
-          },
-          { category: "Other", count: Math.floor(activeContacts.length * 0.1) },
-        ],
-        recentActivity: [
-          {
-            action: "Added",
-            contact: "John Doe",
-            date: format(new Date(), "MMM dd, yyyy"),
-          },
-          {
-            action: "Updated",
-            contact: "Jane Smith",
-            date: format(new Date(Date.now() - 86400000), "MMM dd, yyyy"),
-          },
-          {
-            action: "Deleted",
-            contact: "Robert Johnson",
-            date: format(new Date(Date.now() - 172800000), "MMM dd, yyyy"),
-          },
-        ],
-      });
-    }, 1000);
-  };
+    return {
+      totalContacts: activeContacts.length,
+      categoriesDistribution: [
+        { category: "Work", count: Math.floor(activeContacts.length * 0.4) },
+        { category: "Family", count: Math.floor(activeContacts.length * 0.3) },
+        { category: "Friend", count: Math.floor(activeContacts.length * 0.2) },
+        { category: "Other", count: Math.floor(activeContacts.length * 0.1) },
+      ],
+      recentActivity: [
+        {
+          action: "Added",
+          contact: "John Doe",
+          date: format(new Date(), "MMM dd, yyyy"),
+        },
+        {
+          action: "Updated",
+          contact: "Jane Smith",
+          date: format(new Date(Date.now() - 86400000), "MMM dd, yyyy"),
+        },
+        {
+          action: "Deleted",
+          contact: "Robert Johnson",
+          date: format(new Date(Date.now() - 172800000), "MMM dd, yyyy"),
+        },
+      ],
+    };
+  }, [pageConfig.showDashboard, activeContacts]);
 
   // Delete a contact
   const handleDeleteContact = async (id: string) => {
@@ -185,9 +222,6 @@ export default function ContactsPage() {
       });
       if (result !== null) {
         setContacts(contacts.filter((contact) => contact.id !== id));
-        if (pageConfig.showDashboard) {
-          fetchAnalytics(); // Refresh analytics after deletion
-        }
       }
     } catch (err) {
       console.error("Error deleting contact:", err);
@@ -214,10 +248,6 @@ export default function ContactsPage() {
     }
   };
 
-  const handleContactSelect = (contact: ContactType) => {
-    setSelectedContact(contact);
-  };
-
   const handleChangeStatus = async (id: string, newStatus: string) => {
     const route: string = `/api/contacts/${id}/set-status`;
 
@@ -240,57 +270,6 @@ export default function ContactsPage() {
       console.error("Error changing contact status:", err);
     }
   };
-
-  // Filter and sort contacts based on search term, filter category, sort option, and status
-  const filteredAndSortedContacts = useMemo(() => {
-    // First filter by status according to page type
-    let filtered = contacts.filter((contact) => {
-      if (pageConfig.statusFilter === "active") {
-        return !contact.status || contact.status === "active";
-      }
-      return contact.status === pageConfig.statusFilter;
-    });
-
-    // Then apply search filters
-    filtered = filtered.filter(
-      (contact) =>
-        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact?.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (filterCategory) {
-      filtered = filtered.filter((contact) =>
-        contact.categories.includes(filterCategory)
-      );
-    }
-
-    switch (sortOption) {
-      case "name":
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "recent":
-        // In a real app, you'd sort by creation/update date
-        filtered.sort(() => 0.5 - Math.random());
-        break;
-      case "category":
-        filtered.sort((a, b) => {
-          if (a.categories[0] && b.categories[0]) {
-            return a.categories[0].localeCompare(b.categories[0]);
-          }
-          return 0;
-        });
-        break;
-    }
-
-    return filtered;
-  }, [
-    contacts,
-    searchTerm,
-    filterCategory,
-    sortOption,
-    pageConfig.statusFilter,
-  ]);
 
   // Loading state
   if (status === "loading") {
