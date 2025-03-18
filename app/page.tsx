@@ -165,7 +165,7 @@ export default function ContactsPage() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">
-            Loading ContactHub...
+            Loading ContactsHub...
           </p>
         </div>
       </div>
@@ -194,17 +194,6 @@ export default function ContactsPage() {
                 {pageConfig.description}
               </p>
             </div>
-
-            {/* Actions Bar */}
-            <ActionBar
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-              categories={categories}
-              filterCategory={filterCategory}
-              setFilterCategory={setFilterCategory}
-              sortOption={sortOption}
-              setSortOption={setSortOption}
-            />
 
             {/* Dashboard Section - Only show on active contacts page */}
             {pageConfig.statusFilter === "active" && (
@@ -241,6 +230,16 @@ export default function ContactsPage() {
 
             {/* Main Contacts Section */}
             <div>
+              {/* Actions Bar */}
+              <ActionBar
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                categories={categories}
+                filterCategory={filterCategory}
+                setFilterCategory={setFilterCategory}
+                sortOption={sortOption}
+                setSortOption={setSortOption}
+              />
               {filteredAndSortedContacts.length > 0 ? (
                 <ContactList
                   sectionName={

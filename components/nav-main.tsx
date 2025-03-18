@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-
+import { usePathname } from "next/navigation";
 export function NavMain({
   items,
 }: {
@@ -30,13 +30,19 @@ export function NavMain({
     }[];
   }[];
 }) {
+  const pathname = usePathname();
   return (
     <SidebarGroup>
       <SidebarMenu>
         {items.map((item) => (
-          <SidebarMenuItem key={item.url}>
+          <SidebarMenuItem key={item.url} className="mb-2">
             <SidebarMenuButton asChild>
-              <Link href={item.url}>
+              <Link
+                href={item.url}
+                className={`text-base ${
+                  pathname === item.url ? "font-bold text-indigo-600" : ""
+                }`}
+              >
                 {item.icon && <item.icon className="mr-2" />}
                 {item.title}
               </Link>

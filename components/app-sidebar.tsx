@@ -37,8 +37,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();
   return (
     session && (
-      <Sidebar {...props}>
-        <SidebarHeader>
+      <Sidebar {...props} className="z-50">
+        <SidebarHeader className="invisible">
           <h2 className="text-lg font-bold">ContactsHub</h2>
           <div>group 20</div>
         </SidebarHeader>

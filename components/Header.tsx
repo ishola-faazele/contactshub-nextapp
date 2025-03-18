@@ -4,21 +4,21 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import { 
-  Search, 
-  Bell, 
-  User, 
-  LogOut, 
-  Settings, 
-  HelpCircle, 
-  Moon, 
+import {
+  Search,
+  Bell,
+  User,
+  LogOut,
+  Settings,
+  HelpCircle,
+  Moon,
   Sun,
-  Menu,
+  // Menu,
   X,
   ChevronDown,
-  Filter
+  Filter,
 } from "lucide-react";
-
+import { SidebarTrigger } from "./ui/sidebar";
 interface HeaderProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
@@ -35,97 +35,109 @@ const Header: React.FC<HeaderProps> = ({
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  // const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  
+
   const { data: session } = useSession();
-  
+
   // Handle clicks outside dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target as Node)
+      ) {
         setIsProfileOpen(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
         setIsNotificationsOpen(false);
       }
     };
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  
+
   // Handle dark mode toggle
   useEffect(() => {
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
-  
+
   // Sample notifications data
   const notifications = [
     { id: 1, title: "New team member added", time: "3 mins ago", read: false },
     { id: 2, title: "Meeting scheduled", time: "1 hour ago", read: false },
     { id: 3, title: "Update available", time: "2 hours ago", read: true },
   ];
-  
+
   // Get initials from username
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
       .toUpperCase()
       .substring(0, 2);
   };
-  
+
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
-  
+
   return (
     <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-md transition-all duration-300">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo and mobile menu */}
-          <div className="flex items-center">
-            <button 
+          <div className="flex items-center gap-2">
+            {/* <button 
               className="md:hidden p-2 mr-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (
                 <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               ) : (
-                <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                <SidebarTrigger className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               )}
-            </button>
-            
+            </button> */}
+            <SidebarTrigger className="cursor-pointer h-5 w-5 text-2xl text-gray-600 dark:text-gray-300" />
+
             <motion.div
               className="flex items-center gap-3"
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ type: "spring", stiffness: 120 }}
             >
-              <Link href="/" className="flex items-center">
-                <div className="h-8 w-8 bg-indigo-600 rounded-md flex items-center justify-center text-white font-bold">
+              <Link href="/" className="flex flex-col items-center">
+                {/* <div className="h-8 w-8 bg-indigo-600 rounded-md flex items-center justify-center text-white font-bold">
                   CH
-                </div>
+                </div> */}
                 <h1 className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">
                   ContactsHub
                 </h1>
+                <p className="text-xs">group20/DSA/COE3</p>
               </Link>
             </motion.div>
           </div>
-          
+
           {/* Search bar - responsive */}
-          <div className={`hidden md:flex items-center flex-1 max-w-xl mx-4 ${isSearchExpanded ? 'flex-grow' : ''}`}>
+          <div
+            className={`hidden md:flex items-center flex-1 max-w-xl mx-4 ${
+              isSearchExpanded ? "flex-grow" : ""
+            }`}
+          >
             <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -143,34 +155,34 @@ const Header: React.FC<HeaderProps> = ({
               {searchTerm && (
                 <button
                   className="absolute inset-y-0 right-0 flex items-center pr-3"
-                  onClick={() => setSearchTerm('')}
+                  onClick={() => setSearchTerm("")}
                 >
                   <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
               )}
             </div>
-            <button 
+            <button
               className="ml-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
               <Filter className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
-          
+
           {/* Actions */}
           <div className="flex items-center gap-2">
             {/* Mobile search button */}
-            <button 
+            <button
               className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => {
-                setIsMobileMenuOpen(false);
+                // setIsMobileMenuOpen(false);
                 setIsSearchExpanded(!isSearchExpanded);
                 setTimeout(() => searchRef.current?.focus(), 100);
               }}
             >
               <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
-            
+
             {/* Dark mode toggle */}
             <button
               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -182,7 +194,7 @@ const Header: React.FC<HeaderProps> = ({
                 <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               )}
             </button>
-            
+
             {/* Notifications */}
             <div className="relative" ref={notificationsRef}>
               <button
@@ -193,11 +205,11 @@ const Header: React.FC<HeaderProps> = ({
                 }}
               >
                 <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                {notifications.filter(n => !n.read).length > 0 && (
+                {notifications.filter((n) => !n.read).length > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 )}
               </button>
-              
+
               <AnimatePresence>
                 {isNotificationsOpen && (
                   <motion.div
@@ -208,7 +220,9 @@ const Header: React.FC<HeaderProps> = ({
                     className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-30"
                   >
                     <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        Notifications
+                      </h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.length === 0 ? (
@@ -220,7 +234,9 @@ const Header: React.FC<HeaderProps> = ({
                           <div
                             key={notification.id}
                             className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                              !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                              !notification.read
+                                ? "bg-blue-50 dark:bg-blue-900/20"
+                                : ""
                             }`}
                           >
                             <div className="flex justify-between">
@@ -247,7 +263,7 @@ const Header: React.FC<HeaderProps> = ({
                 )}
               </AnimatePresence>
             </div>
-            
+
             {/* User profile */}
             <div className="relative" ref={profileRef}>
               <button
@@ -265,7 +281,7 @@ const Header: React.FC<HeaderProps> = ({
                 </span>
                 <ChevronDown className="hidden md:block h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
-              
+
               <AnimatePresence>
                 {isProfileOpen && (
                   <motion.div
@@ -324,5 +340,5 @@ const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   );
-}
-export default Header
+};
+export default Header;
