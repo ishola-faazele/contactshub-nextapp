@@ -72,9 +72,11 @@ const Header: React.FC<HeaderProps> = ({
 
   // Handle dark mode toggle
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    if (session) {
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      localStorage.setItem("theme", theme);
+    }
+  }, [theme, session]);
 
   // Sample notifications data
   const notifications = [

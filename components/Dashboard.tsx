@@ -1,25 +1,54 @@
-import { Plus, UserPlus } from "lucide-react";
-
-interface CategoryDistribution {
-  category: string;
-  count: number;
-}
-
-interface RecentActivity {
-  action: string;
-  contact: string;
-  date: string;
-}
+import { Plus, UserPlus, Trash, Star, AlertCircle } from "lucide-react";
+import { UserActivity } from "@/types/types";
+import { CategoryDistribution } from "@/types/types";
 
 interface DashboardProps {
-  analytics: {
-    totalContacts: number;
-    categoriesDistribution: CategoryDistribution[];
-    recentActivity: RecentActivity[];
-  };
+  totalContacts: number;
+  categoriesDistribution: CategoryDistribution[];
+  recentActivity: UserActivity[];
+  maxActivities?: number;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ analytics }) => {
+const Dashboard: React.FC<DashboardProps> = ({
+  totalContacts,
+  categoriesDistribution,
+  recentActivity,
+  maxActivities = 5,
+}) => {
+  // Get only the most recent activities limited by maxActivities
+  const displayedActivities = recentActivity.slice(0, maxActivities);
+
+  // Function to get the appropriate icon for each activity type
+  const getActivityIcon = (action: string) => {
+    switch (action) {
+      case "added":
+        return <Plus size={16} />;
+      case "updated":
+        return <UserPlus size={16} />;
+      case "deleted":
+        return <Trash size={16} />;
+      case "toggle_favorite":
+        return <Star size={16} />;
+      case "set_status":
+        return <AlertCircle size={16} />;
+      default:
+        return <UserPlus size={16} />;
+    }
+  };
+
+  // Function to format the activity description
+  const getActivityDescription = (activity: UserActivity) => {
+    if (activity.action === "toggle_favorite") {
+      return `Marked ${activity.contact_name} as ${
+        activity.action_type ? "favorite" : "not favorite"
+      }`;
+    }
+    if (activity.action === "set_status") {
+      return `Set ${activity.contact_name} status to ${activity.action_type}`;
+    }
+    return `${activity.action} ${activity.contact_name}`;
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       {/* Total Contacts Card */}
@@ -28,7 +57,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analytics }) => {
           Total Contacts
         </h3>
         <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
-          {analytics.totalContacts}
+          {totalContacts}
         </p>
       </div>
 
@@ -38,7 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({ analytics }) => {
           Categories
         </h3>
         <div className="mt-4 space-y-2">
-          {analytics.categoriesDistribution.map((category) => (
+          {categoriesDistribution.map((category) => (
             <div
               key={category.category}
               className="flex items-center justify-between"
@@ -60,23 +89,27 @@ const Dashboard: React.FC<DashboardProps> = ({ analytics }) => {
           Recent Activity
         </h3>
         <div className="mt-4 space-y-3">
-          {analytics.recentActivity.map((activity, index) => (
-            <div key={index} className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center">
-                {activity.action === "Added" && <Plus size={16} />}
-                {activity.action === "Updated" && <UserPlus size={16} />}
-                {activity.action === "Deleted" && <UserPlus size={16} />}
+          {displayedActivities.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              No recent activity
+            </p>
+          ) : (
+            displayedActivities.map((activity, index) => (
+              <div key={index} className="flex items-center space-x-3">
+                <div className="h-8 w-8 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center">
+                  {getActivityIcon(activity.action)}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    {getActivityDescription(activity)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {activity.timestamp}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  {activity.action} {activity.contact}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {activity.date}
-                </p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

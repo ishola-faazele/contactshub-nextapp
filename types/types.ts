@@ -21,3 +21,15 @@ export interface PageConfig {
   description: string;
   statusFilter: string;
 }
+
+export interface UserActivity {
+  action: string;
+  contact_name: string;
+  timestamp: string;
+  action_type?: string
+}
+
+export interface CategoryDistribution {
+  category: string;
+  count: number;
+}

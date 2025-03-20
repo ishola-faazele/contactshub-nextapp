@@ -4,10 +4,10 @@ import { useEffect, useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
-import { ContactType } from "@/types/types";
+import { ContactType, UserActivity } from "@/types/types";
 import {
   getPageConfig,
-  getAnalytics,
+  getDashboardData,
   getFilteredAndSortedContacts,
 } from "@/lib/utils";
 import Header from "../components/Header";
@@ -30,6 +30,7 @@ export default function ContactsPage() {
   const [sortOption, setSortOption] = useState<"name" | "recent" | "category">(
     "name"
   );
+  const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
 
   // Fetch contacts and analytics when authenticated
   useEffect(() => {
@@ -46,7 +47,19 @@ export default function ContactsPage() {
           console.error("Error fetching contacts:", error);
         }
       };
+      const fetchUserActivities = async () => {
+        const data: UserActivity[] | null = await apiRequest(
+          "/api/user-activities"
+        );
+        if (data) {
+          setUserActivities(data);
+        } else if (error) {
+          console.error("Error fetching user activites:", error);
+        }
+      };
+
       fetchContacts();
+      fetchUserActivities();
     }
   }, [status, router, pathname, apiRequest, error]); // update the dependency array
 
@@ -97,9 +110,13 @@ export default function ContactsPage() {
   );
 
   // Generate analytics data using useMemo
-  const analytics = useMemo(() => {
-    return getAnalytics(pageConfig.statusFilter, activeContacts);
-  }, [pageConfig.statusFilter, activeContacts]);
+  const dashboardData = useMemo(() => {
+    return getDashboardData(
+      pageConfig.statusFilter,
+      activeContacts,
+      userActivities
+    );
+  }, [pageConfig.statusFilter, activeContacts, userActivities]);
 
   // Delete a contact
   const handleDeleteContact = async (id: string) => {
@@ -189,7 +206,6 @@ export default function ContactsPage() {
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {pageConfig.title}
-
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
                 {pageConfig.description}
@@ -198,7 +214,11 @@ export default function ContactsPage() {
 
             {/* Dashboard Section - Only show on active contacts page */}
             {pageConfig.statusFilter === "active" && (
-              <Dashboard analytics={analytics} />
+              <Dashboard
+                totalContacts={dashboardData.totalContacts}
+                categoriesDistribution={dashboardData.categoriesDistribution}
+                recentActivity={dashboardData.recentActivity}
+              />
             )}
 
             {/* Favorites Section - Only show on active contacts page */}

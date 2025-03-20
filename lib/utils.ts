@@ -1,15 +1,65 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { format } from "date-fns";
-import { ContactType, PageConfig } from "../types/types";
+import { ContactType, PageConfig, UserActivity } from "../types/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const getAnalytics = (
+/**
+ * Calculate category distribution from contacts
+ * Returns top 3 categories + "Other" category
+ */
+export const calculateCategoryDistribution = (contacts: ContactType[]) => {
+  // Create a map to count occurrences of each category
+  const categoryMap = new Map<string, number>();
+  
+  // Count each category occurrence
+  contacts.forEach(contact => {
+    if (Array.isArray(contact.categories)) {
+      contact.categories.forEach(category => {
+        if (category) {
+          const count = categoryMap.get(category) || 0;
+          categoryMap.set(category, count + 1);
+        }
+      });
+    }
+  });
+  
+  // Convert map to array and sort by count (descending)
+  const sortedCategories = Array.from(categoryMap.entries())
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count);
+  
+  // Get top 3 categories
+  const topCategories = sortedCategories.slice(0, 3);
+  
+  // Calculate "Other" category count (all categories beyond top 3)
+  const otherCount = sortedCategories.slice(3)
+    .reduce((sum, item) => sum + item.count, 0);
+  
+  // Only add "Other" category if there are any
+  const result = [...topCategories];
+  if (otherCount > 0) {
+    result.push({ category: "Other", count: otherCount });
+  }
+  
+  return result;
+};
+
+/**
+ * Get most recent activities
+ */
+export const getRecentActivities = (activities: UserActivity[], limit: number = 5) => {
+  return [...activities]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit);
+};
+
+export const getDashboardData = (
   statusFilter: string,
-  activeContacts: ContactType[]
+  activeContacts: ContactType[],
+  userActivities: UserActivity[]
 ) => {
   if (statusFilter !== "active") {
     return {
@@ -21,29 +71,8 @@ export const getAnalytics = (
 
   return {
     totalContacts: activeContacts.length,
-    categoriesDistribution: [
-      { category: "Work", count: Math.floor(activeContacts.length * 0.4) },
-      { category: "Family", count: Math.floor(activeContacts.length * 0.3) },
-      { category: "Friend", count: Math.floor(activeContacts.length * 0.2) },
-      { category: "Other", count: Math.floor(activeContacts.length * 0.1) },
-    ],
-    recentActivity: [
-      {
-        action: "Added",
-        contact: "John Doe",
-        date: format(new Date(), "MMM dd, yyyy"),
-      },
-      {
-        action: "Updated",
-        contact: "Jane Smith",
-        date: format(new Date(Date.now() - 86400000), "MMM dd, yyyy"),
-      },
-      {
-        action: "Deleted",
-        contact: "Robert Johnson",
-        date: format(new Date(Date.now() - 172800000), "MMM dd, yyyy"),
-      },
-    ],
+    categoriesDistribution: calculateCategoryDistribution(activeContacts),
+    recentActivity: getRecentActivities(userActivities),
   };
 };
 
