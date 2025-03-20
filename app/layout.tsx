@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "ContactsHub",
   description: "Manage your contacts with ease",
-  viewport: "width=device-width, initial-scale=1",
+  // viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({

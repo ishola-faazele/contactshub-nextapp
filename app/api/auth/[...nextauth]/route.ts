@@ -2,7 +2,20 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+declare module "next-auth" {
+  interface User {
+    accessToken?: string;
+  }
 
+  interface Session {
+    accessToken?: string;
+    user: {
+      id?: string;
+      name?: string;
+      email?: string;
+    };
+  }
+}
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -45,39 +58,41 @@ const handler = NextAuth({
   callbacks: {
     async signIn({ account, profile }) {
       if (account?.provider === "google") {
-        if (account?.provider === "google") {
-          try {
-            // Send Google profile info to backend instead of just the token
-            const response = await fetch(
-              `${process.env.BACKEND_URL}/login/google`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  email: profile.email,
-                  name: profile.name,
-                  oauth_id: profile.sub,
-                  oauth_provider: "google",
-                }),
-              }
-            );
+        if (!profile) {
+          console.error("Google profile is undefined");
+          return false; 
+        }
+        try {
+          // Send Google profile info to backend instead of just the token
+          const response = await fetch(
+            `${process.env.BACKEND_URL}/login/google`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: profile.email,
+                name: profile.name,
+                oauth_id: profile.sub,
+                oauth_provider: "google",
+              }),
+            }
+          );
 
-            if (!response.ok) return false;
+          if (!response.ok) return false;
 
-            const data = await response.json();
-            account.backendToken = data.access_token;
-            return true;
-          } catch (error) {
-            console.error("Google auth error:", error);
-            return false;
-          }
+          const data = await response.json();
+          account.backendToken = data.access_token;
+          return true;
+        } catch (error) {
+          console.error("Google auth error:", error);
+          return false;
         }
       }
       return true;
     },
-    
+
     async jwt({ token, user, account }) {
       // Initial sign in
       if (account && user) {
@@ -92,13 +107,13 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       // Send properties to the client
-      session.accessToken = token.accessToken;
-      session.userId = token.userId;
+      session.accessToken = token.accessToken as string;
+      session.user.id = token.userId as string;
       return session;
     },
   },
   pages: {
-    signIn: "api/auth/signin",
+    signIn: "/auth/signin",
   },
   session: {
     strategy: "jwt",

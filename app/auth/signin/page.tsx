@@ -18,11 +18,15 @@ export default function SignIn() {
     setError("");
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      }, {callbackUrl: "/"});
+      const result = await signIn(
+        "credentials",
+        {
+          email,
+          password,
+          redirect: false,
+        },
+        { callbackUrl: "/" }
+      );
 
       if (result?.error) {
         setError("Invalid email or password");
@@ -30,7 +34,7 @@ export default function SignIn() {
         router.push("/");
       }
     } catch (error) {
-      setError("Something went wrong. Please try again.");
+      setError(`Something went wrong. Please try again. ${error}`);
     } finally {
       setLoading(false);
     }
@@ -148,7 +152,7 @@ export default function SignIn() {
         <p className="text-sm text-gray-600">
           Don't have an account?{" "}
           <Link
-            href="/api/auth/register"
+            href="/auth/register"
             className="font-medium text-indigo-600 hover:text-indigo-500"
           >
             Sign up

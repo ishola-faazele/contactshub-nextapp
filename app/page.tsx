@@ -34,7 +34,7 @@ export default function ContactsPage() {
   // Fetch contacts and analytics when authenticated
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/api/auth/signin");
+      router.push("/auth/signin");
     }
     if (status === "authenticated") {
       // Fetch contacts from the API
@@ -189,6 +189,7 @@ export default function ContactsPage() {
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {pageConfig.title}
+
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
                 {pageConfig.description}

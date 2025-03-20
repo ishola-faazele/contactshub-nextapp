@@ -26,17 +26,20 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -46,7 +49,7 @@ export default function Register() {
         router.push("/api/auth/signin?registered=true");
       }
     } catch (error) {
-      setError("Something went wrong. Please try again.");
+      setError(`Something went wrong. Please try again. ${error}`);
     } finally {
       setLoading(false);
     }
@@ -149,7 +152,10 @@ export default function Register() {
         <div className="text-center mt-4">
           <p>
             Already have an account?{" "}
-            <Link href="/api/auth/signin" className="text-indigo-600 hover:text-indigo-500">
+            <Link
+              href="/auth/signin"
+              className="text-indigo-600 hover:text-indigo-500"
+            >
               Sign in
             </Link>
           </p>
