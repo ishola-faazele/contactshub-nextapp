@@ -33,10 +33,14 @@ const Header: React.FC<HeaderProps> = ({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [theme, setTheme] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
+      ? "dark"
+      : "light"
+  );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   // const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const [themekey, setThemekey] = useState(0);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -68,12 +72,9 @@ const Header: React.FC<HeaderProps> = ({
 
   // Handle dark mode toggle
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   // Sample notifications data
   const notifications = [
@@ -93,11 +94,18 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+    setTheme((prev) => {
+      const newTheme = prev === "dark" ? "light" : "dark";
+      setThemekey((k) => k + 1);
+      return newTheme;
+    });
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-md transition-all duration-300">
+    <header
+      key={themekey}
+      className="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-md transition-all duration-300"
+    >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo and mobile menu */}
@@ -188,7 +196,7 @@ const Header: React.FC<HeaderProps> = ({
               className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={toggleDarkMode}
             >
-              {isDarkMode ? (
+              {theme === "dark" ? (
                 <Sun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
               ) : (
                 <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
