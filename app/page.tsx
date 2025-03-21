@@ -9,6 +9,7 @@ import {
   getPageConfig,
   getDashboardData,
   getFilteredAndSortedContacts,
+  createActivity,
 } from "@/lib/utils";
 import Header from "../components/Header";
 import ContactList from "../components/ContactList";
@@ -62,7 +63,7 @@ export default function ContactsPage() {
       fetchContacts();
       fetchUserActivities();
     }
-  }, [status, router, pathname, apiRequest, error]); // update the dependency array
+  }, [status]); // i have to update the dependency array
 
   // Determine page type based on pathname
   const pageConfig = useMemo(() => {
@@ -122,11 +123,21 @@ export default function ContactsPage() {
   // Delete a contact
   const handleDeleteContact = async (id: string) => {
     try {
+      const contactToDelete = contacts.find((contact) => contact.id === id);
       const result = await apiRequest(`/api/contacts/${id}`, {
         method: "DELETE",
       });
       if (result !== null) {
         setContacts(contacts.filter((contact) => contact.id !== id));
+        setUserActivities((prevActivities) => [
+          ...prevActivities,
+          createActivity(
+            "deleted",
+            contactToDelete?.name || "",
+            "",
+            new Date().toISOString()
+          ),
+        ]);
       }
     } catch (err) {
       console.error("Error deleting contact:", err);
@@ -135,6 +146,7 @@ export default function ContactsPage() {
   // Toggle favorite
   const handleToggleFavorite = async (id: string) => {
     try {
+      const contactToUpdate = contacts.find((contact) => contact.id === id);
       const result = await apiRequest(`/api/contacts/${id}/toggle-favorite`, {
         method: "PATCH",
       });
@@ -147,6 +159,15 @@ export default function ContactsPage() {
             return contact;
           })
         );
+        setUserActivities((prevActivities) => [
+          ...prevActivities,
+          createActivity(
+            "toggle_favorite",
+            contactToUpdate?.name || "",
+            contactToUpdate?.favorite ? "not favorite" : "favorite",
+            new Date().toISOString()
+          ),
+        ]);
       }
     } catch (err) {
       console.error("Error Toggling Favorites:", err);
@@ -155,7 +176,7 @@ export default function ContactsPage() {
   // Change status
   const handleChangeStatus = async (id: string, newStatus: string) => {
     const route: string = `/api/contacts/${id}/set-status`;
-
+    const contactToUpdate = contacts.find((contact) => contact.id === id);
     try {
       const result = await apiRequest(route, {
         method: "PATCH",
@@ -170,6 +191,15 @@ export default function ContactsPage() {
             return contact;
           })
         );
+        setUserActivities((prevActivities) => [
+          ...prevActivities,
+          createActivity(
+            "set_status",
+            contactToUpdate?.name || "",
+            newStatus,
+            new Date().toISOString()
+          ),
+        ]);
       }
     } catch (err) {
       console.error("Error changing contact status:", err);
@@ -198,7 +228,13 @@ export default function ContactsPage() {
           data-tooltip-target="tooltip-add-contact"
           className="fixed bottom-8 right-8 z-50"
         >
-          <AddContact />
+          <AddContact
+            contacts={contacts}
+            setContacts={setContacts}
+            userActivities={userActivities}
+            setUserActivities={setUserActivities}
+          />
+          
         </div>
         {/* Main content */}
         <div className="flex-1 flex flex-col">

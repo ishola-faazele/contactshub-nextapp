@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import ContactForm from "../app/contacts/[id]/page";
-
-export default function AddContact() {
+import ContactForm from "@components/ContactForm";
+import { ContactType, UserActivity } from "@types/types";
+export default function AddContact({
+  contacts,
+  setContacts,
+  userActivities,
+  setUserActivities,
+}: {
+  contacts: ContactType[];
+  setContacts: (contacts: ContactType[]) => void;
+  userActivities: UserActivity[];
+  setUserActivities: (contacts: UserActivity[]) => void;
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
@@ -31,10 +41,15 @@ export default function AddContact() {
           />
         </svg>
       </button>
-      
-      <ContactForm 
+
+      <ContactForm
+        contacts={contacts}
+        setContacts={setContacts}
+        userActivities={userActivities}
+        setUserActivities={setUserActivities}
         isOpen={isModalOpen}
         onClose={closeModal}
+        contactId="new"
       />
     </>
   );

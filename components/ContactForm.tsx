@@ -1,28 +1,35 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
-import { ContactType } from "@/types/types";
-
+import { ContactType, UserActivity } from "@/types/types";
+import { createActivity } from "@/lib/utils";
 export default function ContactForm({
   isOpen,
   onClose,
   contactId,
+  contacts,
+  setContacts,
+  userActivities,
+  setUserActivities,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  contactId?: string;
+  contactId: string;
+  contacts: ContactType[];
+  setContacts: (contacts: ContactType[]) => void;
+  userActivities: UserActivity[];
+  setUserActivities: (userActivities: UserActivity[]) => void;
 }) {
   const router = useRouter();
-  const params = useParams();
   const { apiRequest, loading, error } = useApi();
   const modalRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<Partial<ContactType>>({
     name: "",
     email: "",
     phone: "",
-    categories: [] as string[], // Explicitly type as string[]
+    categories: [] as string[],
   });
   const [customCategory, setCustomCategory] = useState("");
   const [isEdit, setIsEdit] = useState(false);
@@ -55,7 +62,7 @@ export default function ContactForm({
     window.addEventListener("keydown", handleEscKey);
 
     return () => window.removeEventListener("keydown", handleEscKey);
-  }, [params, onClose, apiRequest, contactId]);
+  }, [contactId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -118,17 +125,47 @@ export default function ContactForm({
 
     try {
       if (isEdit) {
-        const contactId = params.id;
-        await apiRequest(`/api/contacts/${contactId}`, {
+        const result = await apiRequest(`/api/contacts/${contactId}`, {
           method: "PUT",
           body: JSON.stringify(formData),
         });
+        if (result) {
+          setContacts(
+            contacts.map((contact) => {
+              console.log(contact);
+              if (contact.id === contactId) {
+                return { ...contact, ...formData, id: contactId };
+              }
+              return contact;
+            })
+          );
+          const newActivity: UserActivity = createActivity(
+            "updated",
+            formData.name || "",
+            "",
+            new Date().toISOString()
+          );
+          setUserActivities([...userActivities, newActivity]);
+        }
       } else {
-        await apiRequest("/api/contacts", {
+        const result = await apiRequest("/api/contacts", {
           method: "POST",
           body: JSON.stringify(formData),
         });
+        if (result) {
+          console.log(result);
+          console.log(formData);
+          setContacts([...contacts, result as ContactType]);
+          const newActivity: UserActivity = createActivity(
+            "added",
+            formData.name || "",
+            "",
+            new Date().toISOString()
+          );
+          setUserActivities([...userActivities, newActivity]);
+        }
       }
+      setFormData({ name: "", email: "", phone: "", categories: [] });
       onClose(); // Close the modal after successful submission
       router.refresh(); // Refresh the page to show new/updated contact
     } catch (err) {

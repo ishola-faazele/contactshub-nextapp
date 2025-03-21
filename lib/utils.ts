@@ -13,11 +13,11 @@ export function cn(...inputs: ClassValue[]) {
 export const calculateCategoryDistribution = (contacts: ContactType[]) => {
   // Create a map to count occurrences of each category
   const categoryMap = new Map<string, number>();
-  
+
   // Count each category occurrence
-  contacts.forEach(contact => {
+  contacts.forEach((contact) => {
     if (Array.isArray(contact.categories)) {
-      contact.categories.forEach(category => {
+      contact.categories.forEach((category) => {
         if (category) {
           const count = categoryMap.get(category) || 0;
           categoryMap.set(category, count + 1);
@@ -25,34 +25,41 @@ export const calculateCategoryDistribution = (contacts: ContactType[]) => {
       });
     }
   });
-  
+
   // Convert map to array and sort by count (descending)
   const sortedCategories = Array.from(categoryMap.entries())
     .map(([category, count]) => ({ category, count }))
     .sort((a, b) => b.count - a.count);
-  
+
   // Get top 3 categories
   const topCategories = sortedCategories.slice(0, 3);
-  
+
   // Calculate "Other" category count (all categories beyond top 3)
-  const otherCount = sortedCategories.slice(3)
+  const otherCount = sortedCategories
+    .slice(3)
     .reduce((sum, item) => sum + item.count, 0);
-  
+
   // Only add "Other" category if there are any
   const result = [...topCategories];
   if (otherCount > 0) {
     result.push({ category: "Other", count: otherCount });
   }
-  
+
   return result;
 };
 
 /**
  * Get most recent activities
  */
-export const getRecentActivities = (activities: UserActivity[], limit: number = 5) => {
+export const getRecentActivities = (
+  activities: UserActivity[],
+  limit: number = 5
+) => {
   return [...activities]
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
     .slice(0, limit);
 };
 
@@ -140,4 +147,20 @@ export const getPageConfig = (pathname: string): PageConfig => {
         statusFilter: "active",
       };
   }
+};
+
+export const createActivity = (
+  action: string,
+  contactName: string,
+  actionType: string,
+  timestamp: string
+) => {
+  const newActivity: UserActivity = {
+    action: action,
+    contact_name: contactName,
+    action_type: actionType,
+    timestamp: timestamp,
+  };
+
+  return newActivity;
 };

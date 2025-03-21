@@ -27,14 +27,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import ContactForm from "@/app/contacts/[id]/page";
+import ContactForm from "@/components/ContactForm";
 import { useState } from "react";
+import { UserActivity } from "@types/types";
 // ContactCard component to display each contact and handle the modal
 interface ContactCardInterface {
   contact: ContactType;
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onChangeStatus: (id: string, status: string) => void;
+  contacts: ContactType[];
+  setContacts: (contacts: ContactType[]) => void;
+  userActivities: UserActivity[];
+  setUserActivities: (contacts: UserActivity[]) => void;
 }
 
 const ContactCard: React.FC<ContactCardInterface> = ({
@@ -42,6 +47,10 @@ const ContactCard: React.FC<ContactCardInterface> = ({
   onDelete,
   onToggleFavorite,
   onChangeStatus,
+  contacts,
+  setContacts,
+  userActivities,
+  setUserActivities,
 }) => {
   // Truncate email function
   const truncateEmail = (email: string, maxLength = 15) => {
@@ -152,6 +161,10 @@ const ContactCard: React.FC<ContactCardInterface> = ({
           isOpen={isModalOpen}
           onClose={closeModal}
           contactId={contact.id as string}
+          contacts={contacts}
+          setContacts={setContacts}
+          userActivities={userActivities}
+          setUserActivities={setUserActivities}
         />
         <CardHeader className="flex flex-row items-center justify-between p-3">
           <Avatar className="w-12 h-12 md:w-14 md:h-14">
