@@ -1,22 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useApi } from "@/hooks/useApi";
-import Link from "next/link";
 import { ContactType } from "@/types/types";
 
-export default function ContactForm() {
-  const { data: session, status } = useSession();
+export default function ContactForm({
+  isOpen,
+  onClose,
+  contactId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  contactId?: string;
+}) {
   const router = useRouter();
   const params = useParams();
   const { apiRequest, loading, error } = useApi();
-  const [formData, setFormData] = useState({
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [formData, setFormData] = useState<Partial<ContactType>>({
     name: "",
     email: "",
     phone: "",
-    categories: [],
+    categories: [] as string[], // Explicitly type as string[]
   });
   const [customCategory, setCustomCategory] = useState("");
   const [isEdit, setIsEdit] = useState(false);
@@ -26,28 +32,32 @@ export default function ContactForm() {
   const predefinedCategories = ["Work", "Family", "Friend", "Important"];
 
   useEffect(() => {
-    if(status === "unauthenticated") router.push("/api/auth/signin");
-    const contactId = params?.id;
+    const fetchContact = async (id: string) => {
+      const data: ContactType | null = await apiRequest(`/api/contacts/${id}`);
+      if (data) {
+        setFormData({
+          name: data.name,
+          email: data.email,
+          phone: data.phone || "",
+          categories: Array.isArray(data.categories) ? data.categories : [], // Ensure it's an array
+        });
+      }
+    };
     if (contactId && contactId !== "new") {
       setIsEdit(true);
-      fetchContact(contactId);
+      fetchContact(contactId as string);
     }
-  }, [params]);
 
-  const fetchContact = async (id) => {
-    console.log("Auth status: ", status)
-    const data: ContactType = await apiRequest(`/api/contacts/${id}`);
-    if (data) {
-      setFormData({
-        name: data.name,
-        email: data.email,
-        phone: data.phone || "",
-        categories: data.categories || [],
-      });
-    }
-  };
+    // Add event listener for escape key
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscKey);
 
-  const handleInputChange = (e) => {
+    return () => window.removeEventListener("keydown", handleEscKey);
+  }, [params, onClose, apiRequest, contactId]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -55,33 +65,49 @@ export default function ContactForm() {
     });
   };
 
-  const toggleCategory = (category) => {
+  const toggleCategory = (category: string) => {
+    const currentCategories = Array.isArray(formData.categories)
+      ? formData.categories
+      : [];
+
     setFormData({
       ...formData,
-      categories: formData.categories.includes(category)
-        ? formData.categories.filter((c) => c !== category)
-        : [...formData.categories, category],
+      categories: currentCategories.includes(category)
+        ? currentCategories.filter((c) => c !== category)
+        : [...currentCategories, category],
     });
   };
 
   const addCustomCategory = () => {
-    if (customCategory.trim() && !formData.categories.includes(customCategory.trim())) {
+    const currentCategories = Array.isArray(formData.categories)
+      ? formData.categories
+      : [];
+
+    if (
+      customCategory.trim() &&
+      !currentCategories.includes(customCategory.trim())
+    ) {
       setFormData({
         ...formData,
-        categories: [...formData.categories, customCategory.trim()],
+        categories: [...currentCategories, customCategory.trim()],
       });
       setCustomCategory("");
     }
   };
 
-  const removeCategory = (category) => {
+  const removeCategory = (category: string) => {
+    // Fix for line 227 error - ensure categories is treated as string[]
+    const currentCategories = Array.isArray(formData.categories)
+      ? formData.categories
+      : [];
+
     setFormData({
       ...formData,
-      categories: formData.categories.filter((c) => c !== category),
+      categories: currentCategories.filter((c) => c !== category),
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
@@ -103,153 +129,195 @@ export default function ContactForm() {
           body: JSON.stringify(formData),
         });
       }
-      router.push("/");
+      onClose(); // Close the modal after successful submission
+      router.refresh(); // Refresh the page to show new/updated contact
     } catch (err) {
-      setFormError("Failed to save contact");
+      setFormError(`Failed to save contact ${err}`);
     }
   };
 
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const categories = Array.isArray(formData.categories)
+    ? formData.categories
+    : [];
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">
-            {isEdit ? "Edit Contact" : "Add New Contact"}
-          </h1>
-          <Link
-            href="/"
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-          >
-            Back to Contacts
-          </Link>
-        </div>
-
-        {(error || formError) && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
-            {error || formError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Categories
-              </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {predefinedCategories.map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => toggleCategory(category)}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      formData.categories.includes(category)
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-200 text-gray-800"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex">
-                <input
-                  type="text"
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  placeholder="Add custom category"
-                  className="flex-grow border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
-                <button
-                  type="button"
-                  onClick={addCustomCategory}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700"
-                >
-                  Add
-                </button>
-              </div>
-
-              {formData.categories.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Selected Categories:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.categories.map((category, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm"
-                      >
-                        {category}
-                        <button
-                          type="button"
-                          onClick={() => removeCategory(category)}
-                          className="ml-2 text-indigo-600 hover:text-indigo-800"
-                        >
-                          &times;
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/60"
+      onClick={handleOverlayClick}
+    >
+      <div
+        ref={modalRef}
+        className="max-w-2xl w-full mx-4 md:mx-auto rounded-lg shadow-lg"
+      >
+        <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-xl font-bold">
+              {isEdit ? "Edit Contact" : "Add New Contact"}
+            </h1>
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              onClick={onClose}
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white text-2xl focus:outline-none"
             >
-              {loading ? "Saving..." : isEdit ? "Update Contact" : "Add Contact"}
+              &times;
             </button>
           </div>
-        </form>
+
+          {(error || formError) && (
+            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-100 px-4 py-3 mx-6 mt-4 rounded relative">
+              {error || formError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  value={formData.name || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  value={formData.email || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone || ""}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Categories
+                </label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {predefinedCategories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        categories.includes(category)
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    placeholder="Add custom category"
+                    className="flex-grow bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-l-md shadow-sm py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomCategory}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {categories.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Selected Categories:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((category, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-100 px-3 py-1 rounded-full text-sm"
+                        >
+                          {category}
+                          <button
+                            type="button"
+                            onClick={() => removeCategory(category)}
+                            className="ml-2 text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-white"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-1/2 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-white bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-1/2 py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                {loading
+                  ? "Saving..."
+                  : isEdit
+                  ? "Update Contact"
+                  : "Add Contact"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

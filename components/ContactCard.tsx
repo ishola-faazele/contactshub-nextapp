@@ -21,14 +21,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
+import ContactForm from "@/app/contacts/[id]/page";
+import { useState } from "react";
 // ContactCard component to display each contact and handle the modal
 interface ContactCardInterface {
   contact: ContactType;
@@ -86,20 +86,18 @@ const ContactCard: React.FC<ContactCardInterface> = ({
       colors.length;
     return colors[colorIndex];
   };
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
   const getStatusMenuItems = () => {
     const status = contact.status || "active"; // Default to active if status is undefined
 
     if (status === "active") {
       return (
         <>
-          <DropdownMenuItem>
-            <Link
-              href={`/contacts/${contact.id}`}
-              className="flex items-center gap-2 w-full"
-            >
-              <Pencil className="w-4 h-4" /> Edit Contact
-            </Link>
+          <DropdownMenuItem onClick={openModal}>
+            <Pencil className="w-4 h-4" /> Edit Contact
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => onChangeStatus(contact.id, "blocked")}
@@ -142,7 +140,7 @@ const ContactCard: React.FC<ContactCardInterface> = ({
   return (
     <motion.div
       key={contact.id}
-      className="relative flex flex-col"
+      className="flex flex-col"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
@@ -150,6 +148,11 @@ const ContactCard: React.FC<ContactCardInterface> = ({
     >
       <Card className="flex flex-col px-2 py-3 w-48 md:w-64 shadow-md hover:shadow-lg transition-shadow rounded-2xl dark:bg-gray-800 cursor-pointer">
         {/* Header: Avatar + More Options */}
+        <ContactForm
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          contactId={contact.id as string}
+        />
         <CardHeader className="flex flex-row items-center justify-between p-3">
           <Avatar className="w-12 h-12 md:w-14 md:h-14">
             <AvatarImage src={contact.avatar} alt={contact.name} />
@@ -184,7 +187,8 @@ const ContactCard: React.FC<ContactCardInterface> = ({
 
         {/* Contact Details */}
         <CardContent className="py-1 space-y-2">
-          <div>
+          {/* <Link href={`/contacts/${contact.id}`}> */}
+          <div onClick={openModal}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -214,6 +218,7 @@ const ContactCard: React.FC<ContactCardInterface> = ({
               <span className="truncate">{contact.phone}</span>
             </div>
           )}
+          {/* </Link> */}
         </CardContent>
       </Card>
 

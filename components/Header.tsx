@@ -13,7 +13,6 @@ import {
   HelpCircle,
   Moon,
   Sun,
-  // Menu,
   X,
   ChevronDown,
   Filter,
@@ -39,11 +38,11 @@ const Header: React.FC<HeaderProps> = ({
       : "light"
   );
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  // const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [themekey, setThemekey] = useState(0);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   const { data: session } = useSession();
 
@@ -61,6 +60,13 @@ const Header: React.FC<HeaderProps> = ({
         !notificationsRef.current.contains(event.target as Node)
       ) {
         setIsNotificationsOpen(false);
+      }
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target as Node) &&
+        window.innerWidth < 768 // Only for mobile
+      ) {
+        setIsSearchExpanded(false);
       }
     };
 
@@ -112,16 +118,6 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex justify-between items-center h-16">
           {/* Logo and mobile menu */}
           <div className="flex items-center gap-2">
-            {/* <button 
-              className="md:hidden p-2 mr-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              ) : (
-                <SidebarTrigger className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              )}
-            </button> */}
             <SidebarTrigger className="cursor-pointer h-5 w-5 text-2xl text-gray-600 dark:text-gray-300" />
 
             <motion.div
@@ -131,9 +127,6 @@ const Header: React.FC<HeaderProps> = ({
               transition={{ type: "spring", stiffness: 120 }}
             >
               <Link href="/" className="flex flex-col items-center">
-                {/* <div className="h-8 w-8 bg-indigo-600 rounded-md flex items-center justify-center text-white font-bold">
-                  CH
-                </div> */}
                 <h1 className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">
                   ContactsHub
                 </h1>
@@ -142,12 +135,8 @@ const Header: React.FC<HeaderProps> = ({
             </motion.div>
           </div>
 
-          {/* Search bar - responsive */}
-          <div
-            className={`hidden md:flex items-center flex-1 max-w-xl mx-4 ${
-              isSearchExpanded ? "flex-grow" : ""
-            }`}
-          >
+          {/* Search bar - desktop */}
+          <div className="hidden md:flex items-center flex-1 max-w-xl mx-4">
             <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -159,8 +148,6 @@ const Header: React.FC<HeaderProps> = ({
                 className="w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setIsSearchExpanded(true)}
-                onBlur={() => setIsSearchExpanded(false)}
               />
               {searchTerm && (
                 <button
@@ -185,9 +172,12 @@ const Header: React.FC<HeaderProps> = ({
             <button
               className="md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => {
-                // setIsMobileMenuOpen(false);
                 setIsSearchExpanded(!isSearchExpanded);
-                setTimeout(() => searchRef.current?.focus(), 100);
+                // Focus the search input after animation completes
+                setTimeout(() => {
+                  const input = document.getElementById("mobile-search-input");
+                  if (input) (input as HTMLInputElement).focus();
+                }, 300);
               }}
             >
               <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
@@ -347,6 +337,50 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Mobile search bar - expandable */}
+        <AnimatePresence>
+          {isSearchExpanded && (
+            <motion.div
+              ref={mobileSearchRef}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden overflow-hidden pb-3"
+            >
+              <div className="relative w-full flex items-center">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                </div>
+                <input
+                  id="mobile-search-input"
+                  type="text"
+                  placeholder="Search contacts..."
+                  className="w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <div className="absolute right-0 flex space-x-1 pr-2">
+                  {searchTerm && (
+                    <button
+                      className="p-1"
+                      onClick={() => setSearchTerm("")}
+                    >
+                      <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </button>
+                  )}
+                  <button
+                    className="p-1"
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  >
+                    <Filter className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );

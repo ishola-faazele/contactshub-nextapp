@@ -14,6 +14,7 @@ import Header from "../components/Header";
 import ContactList from "../components/ContactList";
 import ActionBar from "@/components/ActionBar";
 import Dashboard from "@/components/Dashboard";
+import AddContact from "@/components/AddContact";
 
 export default function ContactsPage() {
   // Session and routing
@@ -192,7 +193,13 @@ export default function ContactsPage() {
   // Authenticated state
   if (status === "authenticated") {
     return (
-      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="relative flex min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div
+          data-tooltip-target="tooltip-add-contact"
+          className="fixed bottom-8 right-8 z-50"
+        >
+          <AddContact />
+        </div>
         {/* Main content */}
         <div className="flex-1 flex flex-col">
           <Header

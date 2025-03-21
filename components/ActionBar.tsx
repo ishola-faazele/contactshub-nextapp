@@ -1,7 +1,6 @@
 import { useState } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, LayoutGrid, List, Filter } from "lucide-react";
+import { LayoutGrid, List, Filter } from "lucide-react";
 
 interface ActionBarProps {
   viewMode: "grid" | "list";
@@ -25,8 +24,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState<boolean>(false);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-end mb-6 gap-4">
+      {/* <div className="flex items-center gap-2">
         <Link
           href="/contacts/new"
           className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center space-x-2"
@@ -34,7 +33,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
           <UserPlus size={18} />
           <span>Add Contact</span>
         </Link>
-      </div>
+      </div> */}
 
       <div className="flex items-center gap-2">
         <button
@@ -108,7 +107,11 @@ const ActionBar: React.FC<ActionBarProps> = ({
                     {["name", "recent", "category"].map((option) => (
                       <button
                         key={option}
-                        onClick={() => setSortOption(option as "name" | "recent" | "category")}
+                        onClick={() =>
+                          setSortOption(
+                            option as "name" | "recent" | "category"
+                          )
+                        }
                         className={`w-full text-left p-2 rounded-md ${
                           sortOption === option
                             ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300"
