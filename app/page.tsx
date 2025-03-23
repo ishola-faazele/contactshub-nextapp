@@ -16,7 +16,7 @@ import ContactList from "../components/ContactList";
 import ActionBar from "@/components/ActionBar";
 import Dashboard from "@/components/Dashboard";
 import AddContact from "@/components/AddContact";
-
+import { useContact } from "@/contexts/ContactContext";
 export default function ContactsPage() {
   // Session and routing
   const { data: session, status } = useSession();
@@ -33,7 +33,8 @@ export default function ContactsPage() {
     "name"
   );
   const [userActivities, setUserActivities] = useState<UserActivity[]>([]);
-
+  const { contacts: linkedListContacts, userActivities: myUserActs } =
+    useContact();
   // Fetch contacts and analytics when authenticated
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -234,7 +235,6 @@ export default function ContactsPage() {
             userActivities={userActivities}
             setUserActivities={setUserActivities}
           />
-          
         </div>
         {/* Main content */}
         <div className="flex-1 flex flex-col">

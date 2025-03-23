@@ -1,7 +1,6 @@
-// contexts/AuthContext.tsx
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -37,7 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("Error logging out from backend:", error);
       }
     }
-    
+
     await signOut({ redirect: false });
     router.push("/auth/signin");
   };
@@ -47,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         isAuthenticated: status === "authenticated",
         user: session?.user || null,
-        accessToken: session?.accessToken as string || null,
+        accessToken: (session?.accessToken as string) || null,
         logout,
       }}
     >

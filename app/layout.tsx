@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 const inter = Inter({ subsets: ["latin"] });
-
+import { ContactProvider } from "@/contexts/ContactContext";
 export const metadata = {
   title: "ContactsHub",
   description: "Manage your contacts with ease",
@@ -20,12 +20,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          <SidebarProvider className="flex">
-            <AppSidebar />
-            <main className="flex flex-1">
-              <div className="flex-1">{children}</div>
-            </main>
-          </SidebarProvider>
+          <ContactProvider>
+            <SidebarProvider className="flex">
+              <AppSidebar />
+              <main className="flex flex-1">
+                <div className="flex-1">{children}</div>
+              </main>
+            </SidebarProvider>
+          </ContactProvider>
         </Providers>
       </body>
     </html>
