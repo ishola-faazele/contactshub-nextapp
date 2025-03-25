@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { ContactType, PageConfig, UserActivity } from "../types/types";
+import { LinkedList } from "knust-compeng-dsa-linkedlist";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -10,7 +11,9 @@ export function cn(...inputs: ClassValue[]) {
  * Calculate category distribution from contacts
  * Returns top 3 categories + "Other" category
  */
-export const calculateCategoryDistribution = (contacts: ContactType[]) => {
+export const calculateCategoryDistribution = (
+  contacts: LinkedList<ContactType>
+) => {
   // Create a map to count occurrences of each category
   const categoryMap = new Map<string, number>();
 
@@ -40,10 +43,9 @@ export const calculateCategoryDistribution = (contacts: ContactType[]) => {
     .reduce((sum, item) => sum + item.count, 0);
 
   // Only add "Other" category if there are any
-  const result = [...topCategories];
-  if (otherCount > 0) {
-    result.push({ category: "Other", count: otherCount });
-  }
+  const result = topCategories.concat(
+    otherCount > 0 ? [{ category: "Other", count: otherCount }] : []
+  );
 
   return result;
 };
@@ -51,28 +53,22 @@ export const calculateCategoryDistribution = (contacts: ContactType[]) => {
 /**
  * Get most recent activities
  */
-export const getRecentActivities = (
-  activities: UserActivity[],
-  limit: number = 5
-) => {
-  return [...activities]
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    )
-    .slice(0, limit);
+export const getRecentActivities = (activities: LinkedList<UserActivity>) => {
+  return activities.toSorted(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 };
 
 export const getDashboardData = (
   statusFilter: string,
-  activeContacts: ContactType[],
-  userActivities: UserActivity[]
+  activeContacts: LinkedList<ContactType>,
+  userActivities: LinkedList<UserActivity>
 ) => {
-  if (statusFilter !== "active") {
+  if (statusFilter !== "/") {
     return {
       totalContacts: 0,
       categoriesDistribution: [],
-      recentActivity: [],
+      recentActivity: new LinkedList<UserActivity>(),
     };
   }
 
@@ -84,7 +80,7 @@ export const getDashboardData = (
 };
 
 export const getFilteredAndSortedContacts = (
-  contacts: ContactType[],
+  contacts: LinkedList<ContactType>,
   statusFilter: string,
   searchTerm: string,
   filterCategory: string | null,
@@ -109,21 +105,25 @@ export const getFilteredAndSortedContacts = (
     );
   }
 
-  const sorted = [...filtered];
+  // Create a new sorted LinkedList based on the sort option
+  let result: LinkedList<ContactType>;
+
   switch (sortOption) {
     case "name":
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
+      result = filtered.toSorted((a, b) => a.name.localeCompare(b.name));
       break;
     case "category":
-      sorted.sort((a, b) => {
+      result = filtered.toSorted((a, b) => {
         const catA = a.categories[0] || "";
         const catB = b.categories[0] || "";
         return catA.localeCompare(catB);
       });
       break;
+    default:
+      result = filtered;
   }
 
-  return sorted;
+  return result;
 };
 
 export const getPageConfig = (pathname: string): PageConfig => {
@@ -154,7 +154,7 @@ export const createActivity = (
   contactName: string,
   actionType: string,
   timestamp: string
-) => {
+): UserActivity => {
   const newActivity: UserActivity = {
     action: action,
     contact_name: contactName,

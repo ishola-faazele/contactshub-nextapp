@@ -8,28 +8,19 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { UserActivity } from "@/types/types";
-import { CategoryDistribution } from "@/types/types";
 import { useState, useEffect } from "react";
+import { useContact } from "@/contexts/ContactContext";
 
-interface DashboardProps {
-  totalContacts: number;
-  categoriesDistribution: CategoryDistribution[];
-  recentActivity: UserActivity[];
-  maxActivities?: number;
-}
-
-const Dashboard: React.FC<DashboardProps> = ({
-  totalContacts,
-  categoriesDistribution,
-  recentActivity,
-  maxActivities = 3,
-}) => {
+const Dashboard: React.FC = ({}) => {
   // State for carousel
+  const { dashboardData } = useContact();
+  const { totalContacts, categoriesDistribution, recentActivity } =
+    dashboardData;
   const [currentCard, setCurrentCard] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   // Get only the most recent activities limited by maxActivities
-  const displayedActivities = recentActivity.slice(0, maxActivities);
+  const displayedActivities = recentActivity.slice(0, 3);
 
   // Check screen size on mount and resize
   useEffect(() => {

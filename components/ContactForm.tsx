@@ -5,22 +5,16 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import { ContactType, UserActivity } from "@/types/types";
 import { createActivity } from "@/lib/utils";
+import { useContact } from "@/contexts/ContactContext";
+import { LinkedList } from "knust-compeng-dsa-linkedlist";
 export default function ContactForm({
   isOpen,
   onClose,
   contactId,
-  contacts,
-  setContacts,
-  userActivities,
-  setUserActivities,
 }: {
   isOpen: boolean;
   onClose: () => void;
   contactId: string;
-  contacts: ContactType[];
-  setContacts: (contacts: ContactType[]) => void;
-  userActivities: UserActivity[];
-  setUserActivities: (userActivities: UserActivity[]) => void;
 }) {
   const router = useRouter();
   const { apiRequest, loading, error } = useApi();
@@ -34,6 +28,8 @@ export default function ContactForm({
   const [customCategory, setCustomCategory] = useState("");
   const [isEdit, setIsEdit] = useState(false);
   const [formError, setFormError] = useState("");
+  const { contacts, userActivities, setContacts, setUserActivities } =
+    useContact();
 
   // Predefined categories
   const predefinedCategories = ["Work", "Family", "Friend", "Important"];
@@ -118,8 +114,8 @@ export default function ContactForm({
     e.preventDefault();
     setFormError("");
 
-    if (!formData.name || !formData.email) {
-      setFormError("Name and email are required");
+    if (!formData.name || !formData.email || !formData.phone) {
+      setFormError("Name email and phone are required");
       return;
     }
 
@@ -145,7 +141,8 @@ export default function ContactForm({
             "",
             new Date().toISOString()
           );
-          setUserActivities([...userActivities, newActivity]);
+
+          setUserActivities(userActivities.concat(new LinkedList(newActivity)));
         }
       } else {
         const result = await apiRequest("/api/contacts", {
@@ -153,16 +150,15 @@ export default function ContactForm({
           body: JSON.stringify(formData),
         });
         if (result) {
-          console.log(result);
-          console.log(formData);
-          setContacts([...contacts, result as ContactType]);
+          const list = new LinkedList(result as ContactType);
+          setContacts(contacts.concat(list));
           const newActivity: UserActivity = createActivity(
             "added",
             formData.name || "",
             "",
             new Date().toISOString()
           );
-          setUserActivities([...userActivities, newActivity]);
+          setUserActivities(userActivities.concat(new LinkedList(newActivity)));
         }
       }
       setFormData({ name: "", email: "", phone: "", categories: [] });
@@ -262,6 +258,7 @@ export default function ContactForm({
                   type="tel"
                   id="phone"
                   name="phone"
+                  required
                   value={formData.phone || ""}
                   onChange={handleInputChange}
                   className="mt-1 block w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"

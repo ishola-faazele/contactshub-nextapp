@@ -158,12 +158,12 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </div>
-            <button
+            {/* <button
               className="ml-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
               <Filter className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            </button>
+            </button> */}
           </div>
 
           {/* Actions */}
@@ -196,7 +196,7 @@ const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Notifications */}
-            <div className="relative" ref={notificationsRef}>
+            {/* <div className="relative" ref={notificationsRef}>
               <button
                 className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 relative"
                 onClick={() => {
@@ -262,7 +262,7 @@ const Header: React.FC<HeaderProps> = ({
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </div> */}
 
             {/* User profile */}
             <div className="relative" ref={profileRef}>
