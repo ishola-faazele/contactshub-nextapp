@@ -27,7 +27,7 @@ export default function Register() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`,
+        `${process.env.BACKEND_URL}/api/register`,
         {
           method: "POST",
           headers: {
