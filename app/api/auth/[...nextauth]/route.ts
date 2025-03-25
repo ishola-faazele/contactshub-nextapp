@@ -16,6 +16,7 @@ declare module "next-auth" {
     };
   }
 }
+console.log(process.env.GOOGLE_CLIENT_ID);
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -31,14 +32,17 @@ const handler = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const res = await fetch(`${process.env.BACKEND_URL}/api/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          }
+        );
 
         const data = await res.json();
 
@@ -60,12 +64,12 @@ const handler = NextAuth({
       if (account?.provider === "google") {
         if (!profile) {
           console.error("Google profile is undefined");
-          return false; 
+          return false;
         }
         try {
           // Send Google profile info to backend instead of just the token
           const response = await fetch(
-            `${process.env.BACKEND_URL}/login/google`,
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/login/google`,
             {
               method: "POST",
               headers: {

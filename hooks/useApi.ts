@@ -16,7 +16,7 @@ export function useApi() {
       return null;
     }
 
-    const url = `${process.env.BACKEND_URL}${endpoint}`;
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_URL!}${endpoint}`;
 
     const headers = {
       ...options.headers,
