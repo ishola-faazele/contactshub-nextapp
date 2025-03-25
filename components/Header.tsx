@@ -6,7 +6,6 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   Search,
-  Bell,
   User,
   LogOut,
   Settings,
@@ -30,7 +29,6 @@ const Header: React.FC<HeaderProps> = ({
   setSearchTerm,
 }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [theme, setTheme] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
@@ -40,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [themekey, setThemekey] = useState(0);
   const profileRef = useRef<HTMLDivElement>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
+
   const searchRef = useRef<HTMLInputElement>(null);
   const mobileSearchRef = useRef<HTMLDivElement>(null);
 
@@ -54,12 +52,6 @@ const Header: React.FC<HeaderProps> = ({
         !profileRef.current.contains(event.target as Node)
       ) {
         setIsProfileOpen(false);
-      }
-      if (
-        notificationsRef.current &&
-        !notificationsRef.current.contains(event.target as Node)
-      ) {
-        setIsNotificationsOpen(false);
       }
       if (
         mobileSearchRef.current &&
@@ -83,13 +75,6 @@ const Header: React.FC<HeaderProps> = ({
       localStorage.setItem("theme", theme);
     }
   }, [theme, session]);
-
-  // Sample notifications data
-  const notifications = [
-    { id: 1, title: "New team member added", time: "3 mins ago", read: false },
-    { id: 2, title: "Meeting scheduled", time: "1 hour ago", read: false },
-    { id: 3, title: "Update available", time: "2 hours ago", read: true },
-  ];
 
   // Get initials from username
   const getInitials = (name: string) => {
@@ -158,12 +143,9 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </div>
-            {/* <button
-              className="ml-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-            >
+            <button className="ml-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
               <Filter className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            </button> */}
+            </button>
           </div>
 
           {/* Actions */}
@@ -185,7 +167,7 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Dark mode toggle */}
             <button
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={toggleDarkMode}
             >
               {theme === "dark" ? (
@@ -195,74 +177,6 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Notifications */}
-            {/* <div className="relative" ref={notificationsRef}>
-              <button
-                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 relative"
-                onClick={() => {
-                  setIsNotificationsOpen(!isNotificationsOpen);
-                  setIsProfileOpen(false);
-                }}
-              >
-                <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                {notifications.filter((n) => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {isNotificationsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-30"
-                  >
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                        Notifications
-                      </h3>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-                          No notifications
-                        </div>
-                      ) : (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                              !notification.read
-                                ? "bg-blue-50 dark:bg-blue-900/20"
-                                : ""
-                            }`}
-                          >
-                            <div className="flex justify-between">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {notification.title}
-                              </p>
-                              {!notification.read && (
-                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {notification.time}
-                            </p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                      <button className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
-                        Mark all as read
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div> */}
 
             {/* User profile */}
             <div className="relative" ref={profileRef}>
@@ -270,7 +184,6 @@ const Header: React.FC<HeaderProps> = ({
                 className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={() => {
                   setIsProfileOpen(!isProfileOpen);
-                  setIsNotificationsOpen(false);
                 }}
               >
                 <div className="h-8 w-8 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full flex items-center justify-center font-medium">
@@ -363,10 +276,7 @@ const Header: React.FC<HeaderProps> = ({
                 />
                 <div className="absolute right-0 flex space-x-1 pr-2">
                   {searchTerm && (
-                    <button
-                      className="p-1"
-                      onClick={() => setSearchTerm("")}
-                    >
+                    <button className="p-1" onClick={() => setSearchTerm("")}>
                       <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     </button>
                   )}
