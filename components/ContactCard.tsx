@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import ContactForm from "@/components/ContactForm";
 import { useState } from "react";
-import { UserActivity } from "@types/types";
+import { UserActivity } from "@/types/types";
 // ContactCard component to display each contact and handle the modal
 interface ContactCardInterface {
   contact: ContactType;
