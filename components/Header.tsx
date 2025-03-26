@@ -6,9 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   Search,
-  User,
   LogOut,
-  Settings,
   HelpCircle,
   Moon,
   Sun,
@@ -17,6 +15,7 @@ import {
   Filter,
 } from "lucide-react";
 import { SidebarTrigger } from "./ui/sidebar";
+import Help from "@components/Help";
 interface HeaderProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
@@ -43,6 +42,10 @@ const Header: React.FC<HeaderProps> = ({
   const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   const { data: session } = useSession();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   // Handle clicks outside dropdowns
   useEffect(() => {
@@ -100,6 +103,7 @@ const Header: React.FC<HeaderProps> = ({
       className="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-md transition-all duration-300"
     >
       <div className="container mx-auto px-4">
+        <Help onClose={closeModal} isOpen={isModalOpen} />
         <div className="flex justify-between items-center h-16">
           {/* Logo and mobile menu */}
           <div className="flex items-center gap-2">
@@ -177,7 +181,6 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-
             {/* User profile */}
             <div className="relative" ref={profileRef}>
               <button
@@ -213,37 +216,27 @@ const Header: React.FC<HeaderProps> = ({
                       </p>
                     </div>
                     <div className="py-1">
-                      <Link
-                        href="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      <div
+                        onClick={openModal}
+                        className="cursor-pointer flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
-                        <User className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400" />
-                        Your Profile
-                      </Link>
-                      <Link
-                        href="/settings"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <Settings className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400" />
-                        Settings
-                      </Link>
-                      <Link
-                        href="/help"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <HelpCircle className="h-4 w-4 mr-3 text-gray-500 dark:text-gray-400" />
+                        <HelpCircle
+                          onClick={openModal}
+                          className=" h-4 w-4 mr-3 text-gray-500 dark:text-gray-400"
+                        />
                         Help & Support
-                      </Link>
+                      </div>
                     </div>
                     <div className="py-1 border-t border-gray-200 dark:border-gray-700">
                       <button
                         onClick={() => signOut({ callbackUrl: "/" })}
-                        className="flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="cursor-pointer flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <LogOut className="h-4 w-4 mr-3 text-red-500 dark:text-red-400" />
                         Sign Out
                       </button>
                     </div>
+                    <div></div>
                   </motion.div>
                 )}
               </AnimatePresence>
