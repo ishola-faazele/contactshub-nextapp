@@ -36,7 +36,7 @@ const ContactList: React.FC<ContactListInterface> = ({
           {sectionName}
         </h2>
       )}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-4 flex-wrap">
         <AnimatePresence>
           {contacts.toArray().map((contact) => (
             <ContactCard

@@ -146,7 +146,7 @@ const ContactCard: React.FC<ContactCardInterface> = ({
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="flex flex-col px-2 py-3 w-48 md:w-64 shadow-md hover:shadow-lg transition-shadow rounded-2xl dark:bg-gray-800 cursor-pointer">
+      <Card className="flex flex-col px-2 py-3 w-48 h-auto shadow-md hover:shadow-lg transition-shadow rounded-2xl dark:bg-gray-800 cursor-pointer">
         {/* Header: Avatar + More Options */}
         <ContactForm
           isOpen={isModalOpen}
@@ -209,7 +209,6 @@ const ContactCard: React.FC<ContactCardInterface> = ({
             />
             <span className="truncate">{truncateEmail(contact.email)}</span>
           </div>
-          {contact.phone && (
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <Phone
                 size={16}
@@ -217,8 +216,7 @@ const ContactCard: React.FC<ContactCardInterface> = ({
               />
               <span className="truncate">{contact.phone}</span>
             </div>
-          )}
-          {/* </Link> */}
+
         </CardContent>
       </Card>
 
