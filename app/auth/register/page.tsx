@@ -27,7 +27,7 @@ export default function Register() {
 
     try {
       const response = await fetch(
-        `${process.env.BACKEND_URL}/api/register`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/register`,
         {
           method: "POST",
           headers: {
@@ -46,7 +46,7 @@ export default function Register() {
       if (!response.ok) {
         setError(data.error || "Registration failed");
       } else {
-        router.push("/api/auth/signin?registered=true");
+        router.push("/auth/signin?registered=true");
       }
     } catch (error) {
       setError(`Something went wrong. Please try again. ${error}`);
